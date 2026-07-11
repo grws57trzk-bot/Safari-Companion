@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#171310">
+<title>Reisekasse · Namibia & Botswana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#171310;
+    --bg-elev:#221c17;
+    --bg-elev2:#2c241d;
+    --sand:#efe3c8;
+    --sand-dim:#b7a98c;
+    --gold:#c99a46;
+    --gold-dim:#9c7936;
+    --rust:#a8542e;
+    --green:#7c9a5f;
+    --red:#b24c42;
+    --border:rgba(239,227,200,0.12);
+    --border-strong:rgba(239,227,200,0.22);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(201,154,70,0.12), transparent 45%),
+      radial-gradient(ellipse at 100% 0%, rgba(168,84,46,0.10), transparent 40%),
+      var(--bg);
+    color:var(--sand);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+  #app{
+    max-width:520px;
+    margin:0 auto;
+    height:100vh;
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  header{
+    padding:calc(env(safe-area-inset-top) + 18px) 20px 14px;
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  header .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold);
+  }
+  header h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:26px;
+    margin:2px 0 0;
+    letter-spacing:0.01em;
+  }
+  header h1 em{
+    font-style:italic;
+    font-weight:500;
+    color:var(--sand-dim);
+  }
+  main{
+    flex:1;
+    overflow-y:auto;
+    padding:16px 16px calc(90px + env(safe-area-inset-bottom));
+  }
+  .section-title{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--sand-dim);
+    margin:22px 4px 10px;
+  }
+  .section-title:first-child{margin-top:4px;}
+
+  /* Stamp badge — signature element */
+  .stamp{
+    width:46px;height:46px;
+    border-radius:50%;
+    border:1.5px dashed var(--border-strong);
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    background:var(--bg-elev2);
+    color:var(--gold);
+    transform:rotate(-4deg);
+    font-size:20px;
+    line-height:1;
+  }
+  .stamp svg{width:22px;height:22px;stroke:currentColor;}
+  .stamp.sm{width:34px;height:34px;font-size:15px;}
+  .stamp.sm svg{width:16px;height:16px;}
+
+  .totals-strip{
+    display:flex;gap:8px;flex-wrap:wrap;
+  }
+  .pill{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    padding:8px 12px;
+    border-radius:100px;
+    background:var(--bg-elev);
+    border:1px solid var(--border);
+    color:var(--sand);
+  }
+  .pill b{color:var(--gold);font-weight:600;}
+
+  .card{
+    background:var(--bg-elev);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:14px;
+    margin-bottom:10px;
+  }
+  .cat-row{
+    display:flex;align-items:center;gap:12px;
+    padding:6px 2px;
+  }
+  .cat-row .meta{flex:1;min-width:0;}
+  .cat-row .label{font-size:14.5px;font-weight:500;}
+  .cat-row .sub{font-size:11.5px;color:var(--sand-dim);margin-top:1px;}
+  .cat-row .amounts{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    text-align:right;
+    color:var(--gold);
+    line-height:1.5;
+  }
+
+  .payer-bar-wrap{margin-top:6px;}
+  .payer-bar{
+    height:8px;border-radius:100px;overflow:hidden;
+    display:flex;background:var(--bg-elev2);border:1px solid var(--border);
+  }
+  .payer-bar .a{background:var(--gold);}
+  .payer-bar .b{background:var(--rust);}
+  .legend{display:flex;justify-content:space-between;font-size:11.5px;color:var(--sand-dim);margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+  .legend .a-dot{color:var(--gold);}
+  .legend .b-dot{color:var(--rust);}
+
+  /* history */
+  .filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:6px;}
+  .chip{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;white-space:nowrap;
+    padding:6px 11px;border-radius:100px;
+    border:1px solid var(--border);
+    background:var(--bg-elev);color:var(--sand-dim);
+    flex-shrink:0;
+  }
+  .chip.active{border-color:var(--gold);color:var(--gold);background:rgba(201,154,70,0.10);}
+
+  .exp-item{
+    display:flex;align-items:center;gap:12px;
+    padding:11px 4px;
+    border-bottom:1px solid var(--border);
+  }
+  .exp-item:last-child{border-bottom:none;}
+  .exp-item .meta{flex:1;min-width:0;}
+  .exp-item .desc{font-size:14.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .exp-item .desc .payer-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;
+    padding:1px 6px;border-radius:5px;margin-left:6px;
+    border:1px solid var(--border-strong);color:var(--sand-dim);
+  }
+  .exp-item .sub{font-size:11.5px;color:var(--sand-dim);margin-top:2px;font-family:'IBM Plex Mono',monospace;}
+  .exp-item .amt{font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--gold);flex-shrink:0;}
+  .exp-item .del-btn{
+    background:none;border:none;color:var(--sand-dim);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;
+    padding:4px 8px;flex-shrink:0;
+  }
+  .exp-item .del-confirm{display:flex;gap:4px;flex-shrink:0;}
+  .exp-item .del-confirm button{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;border-radius:6px;
+    border:1px solid var(--border-strong);background:var(--bg-elev2);color:var(--sand);padding:4px 8px;
+  }
+  .exp-item .del-confirm button.yes{color:var(--red);border-color:var(--red);}
+  .day-label{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--sand-dim);
+    margin:16px 4px 4px;letter-spacing:0.05em;
+  }
+  .day-label:first-child{margin-top:2px;}
+  .empty{
+    text-align:center;color:var(--sand-dim);font-size:13.5px;
+    padding:50px 20px;
+  }
+
+  /* Form */
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;font-family:'IBM Plex Mono',monospace;
+    font-size:11px;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--sand-dim);margin-bottom:8px;
+  }
+  .field input, .field select{
+    width:100%;background:var(--bg-elev2);border:1px solid var(--border-strong);
+    color:var(--sand);border-radius:10px;padding:12px 12px;
+    font-size:15px;font-family:'Inter',sans-serif;
+  }
+  .field input:focus, .field select:focus{outline:2px solid var(--gold);outline-offset:1px;}
+  .field input::placeholder{color:var(--sand-dim);}
+  .grid-cats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .cat-btn{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    background:none;border:none;padding:6px 2px;color:var(--sand-dim);
+  }
+  .cat-btn .stamp{transition:transform .15s ease, color .15s ease, border-color .15s ease;}
+  .cat-btn.active{color:var(--gold);}
+  .cat-btn.active .stamp{color:var(--gold);border-color:var(--gold);border-style:solid;transform:rotate(0deg) scale(1.05);}
+  .cat-btn span{font-size:10px;text-align:center;line-height:1.25;}
+
+  .seg{display:flex;border:1px solid var(--border-strong);border-radius:10px;overflow:hidden;}
+  .seg button{
+    flex:1;background:var(--bg-elev2);border:none;color:var(--sand-dim);
+    padding:12px 6px;font-size:13.5px;font-family:'Inter',sans-serif;font-weight:500;
+    border-left:1px solid var(--border-strong);
+  }
+  .seg button:first-child{border-left:none;}
+  .seg button.active{background:var(--gold);color:#1a1408;}
+
+  .currency-row{display:flex;gap:8px;}
+  .currency-row button{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+    padding:9px 0;flex:1;border-radius:9px;border:1px solid var(--border-strong);
+    background:var(--bg-elev2);color:var(--sand-dim);
+  }
+  .currency-row button.active{color:var(--gold);border-color:var(--gold);background:rgba(201,154,70,0.10);}
+
+  .save-btn{
+    width:100%;padding:15px;border-radius:12px;border:none;
+    background:var(--gold);color:#1a1408;font-weight:600;font-size:15px;
+    font-family:'Inter',sans-serif;margin-top:6px;
+  }
+  .save-btn:active{background:var(--gold-dim);}
+  .cancel-edit{
+    width:100%;padding:12px;border-radius:12px;border:1px solid var(--border-strong);
+    background:none;color:var(--sand-dim);font-size:13.5px;margin-top:8px;font-family:'Inter',sans-serif;
+  }
+
+  /* Settlement */
+  .settle-hero{
+    text-align:center;padding:28px 16px;
+  }
+  .settle-hero .stamp{margin:0 auto 14px;width:64px;height:64px;}
+  .settle-hero .stamp svg{width:30px;height:30px;}
+  .settle-hero .verdict{
+    font-family:'Fraunces',serif;font-style:italic;font-weight:500;
+    font-size:19px;color:var(--sand);line-height:1.4;
+  }
+  .settle-hero .verdict b{font-style:normal;font-weight:600;color:var(--gold);}
+  .settle-currency-block{margin-bottom:14px;}
+  .settle-currency-block .cur-label{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--sand-dim);
+    letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;
+  }
+
+  nav{
+    position:absolute;bottom:0;left:0;right:0;
+    display:flex;
+    background:rgba(23,19,16,0.92);
+    backdrop-filter:blur(14px);
+    border-top:1px solid var(--border);
+    padding:8px 6px calc(10px + env(safe-area-inset-bottom));
+  }
+  nav button{
+    flex:1;background:none;border:none;color:var(--sand-dim);
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    padding:6px 2px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.03em;
+  }
+  nav button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;}
+  nav button.active{color:var(--gold);}
+
+  /* Reise-Cockpit, Budget & Datensicherung */
+  .trip-hero{background:linear-gradient(135deg,rgba(201,154,70,.18),rgba(168,84,46,.12));border:1px solid var(--border-strong);border-radius:18px;padding:18px;margin-bottom:12px}
+  .trip-hero h2{font-family:'Fraunces',serif;font-size:22px;margin:0 0 4px}
+  .trip-hero .route{color:var(--sand-dim);font-size:12px}
+  .count-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+  .count-box{background:rgba(23,19,16,.55);border:1px solid var(--border);border-radius:12px;padding:12px 6px;text-align:center}
+  .count-box b{display:block;color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:20px}
+  .count-box span{font-size:10px;color:var(--sand-dim);text-transform:uppercase;letter-spacing:.06em}
+  .budget-row{padding:10px 2px;border-top:1px solid var(--border)}
+  .budget-row:first-child{border-top:none}
+  .budget-head{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+  .budget-head b{color:var(--gold);font-family:'IBM Plex Mono',monospace}
+  .progress{height:8px;background:var(--bg-elev2);border:1px solid var(--border);border-radius:99px;overflow:hidden;margin:8px 0 5px}
+  .progress i{display:block;height:100%;background:var(--gold);border-radius:99px}
+  .budget-meta{display:flex;justify-content:space-between;color:var(--sand-dim);font-size:10.5px;font-family:'IBM Plex Mono',monospace}
+  .tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .tool-btn{border:1px solid var(--border-strong);background:var(--bg-elev2);color:var(--sand);border-radius:11px;padding:12px 8px;font-family:'Inter',sans-serif;font-weight:600}
+  .tool-btn.danger{color:#e49b91}
+  .budget-inputs{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .budget-inputs label{font-size:10px;color:var(--sand-dim);font-family:'IBM Plex Mono',monospace}
+  .budget-inputs input{margin-top:5px;width:100%;background:var(--bg-elev2);border:1px solid var(--border-strong);color:var(--sand);border-radius:9px;padding:10px}
+
+
+
+
+
+
+
+
+  .final-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(201,154,70,.14);border:1px solid var(--border-strong);color:var(--gold);border-radius:99px;padding:6px 10px;font-size:10px;font-family:'IBM Plex Mono',monospace;margin-bottom:10px}
+  .check-row{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--border)}
+  .check-row:last-child{border-bottom:none}.check-row.done .check-text{text-decoration:line-through;opacity:.55}
+  .check-toggle{width:25px;height:25px;border-radius:8px;border:1px solid var(--border-strong);background:var(--bg-elev2);color:var(--gold);font-weight:700}
+  .check-text{flex:1;font-size:13px}.check-cat{font-size:9px;color:var(--sand-dim);text-transform:uppercase;letter-spacing:.06em}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+  .stat-card{background:var(--bg-elev2);border:1px solid var(--border);border-radius:12px;padding:13px}
+  .stat-card b{display:block;color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:17px}
+  .stat-card span{font-size:10px;color:var(--sand-dim)}
+  .rank-row{margin:12px 0}.rank-head{display:flex;justify-content:space-between;font-size:12px;gap:8px}.rank-head b{color:var(--gold);font-family:'IBM Plex Mono',monospace}
+  .trip-entry{display:flex;gap:11px;align-items:flex-start;padding:12px 2px;border-bottom:1px solid var(--border)}
+  .trip-entry:last-child{border-bottom:none}
+  .trip-date{min-width:48px;text-align:center;background:var(--bg-elev2);border:1px solid var(--border);border-radius:10px;padding:7px 4px}
+  .trip-date b{display:block;color:var(--gold);font-size:18px;font-family:'IBM Plex Mono',monospace}
+  .trip-date span{font-size:9px;color:var(--sand-dim);text-transform:uppercase}
+  .trip-entry .meta{flex:1;min-width:0}.trip-entry .desc{font-weight:600}.trip-entry .sub{font-size:11px;color:var(--sand-dim);margin-top:3px;line-height:1.4}
+  .wild-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .wild-btn{background:var(--bg-elev2);border:1px solid var(--border);border-radius:12px;padding:12px 5px;color:var(--sand);text-align:center}
+  .wild-btn b{display:block;font-size:24px;margin-bottom:4px}.wild-btn span{font-size:10px}
+  .wild-photo{width:52px;height:52px;border-radius:9px;object-fit:cover;border:1px solid var(--border-strong)}
+  .fuel-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .fuel-grid .field{margin-bottom:8px}
+  .fuel-stat{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+  .fuel-stat div{background:var(--bg-elev2);border:1px solid var(--border);border-radius:11px;padding:11px;text-align:center}
+  .fuel-stat b{display:block;color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:16px}
+  .fuel-stat span{font-size:10px;color:var(--sand-dim)}
+  .participant-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .participant-row input{flex:1;background:var(--bg-elev2);border:1px solid var(--border-strong);color:var(--sand);border-radius:9px;padding:11px}
+  .participant-row button{background:none;border:1px solid var(--border-strong);color:var(--red);border-radius:9px;padding:10px 12px}
+  .hint-box{font-size:11.5px;color:var(--sand-dim);line-height:1.45;margin-top:9px}
+  .receipt-box{border:1px dashed var(--border-strong);border-radius:12px;padding:12px;text-align:center;background:var(--bg-elev2)}
+  .receipt-box input{display:none}
+  .receipt-actions{display:flex;gap:8px;justify-content:center}
+  .receipt-btn{border:1px solid var(--border-strong);background:var(--bg);color:var(--sand);border-radius:9px;padding:10px 12px;font-weight:600}
+  .receipt-preview{margin-top:10px;position:relative}
+  .receipt-preview img{width:100%;max-height:240px;object-fit:contain;border-radius:10px;background:#0d0b09}
+  .receipt-badge{font-size:10px;color:var(--gold);font-family:'IBM Plex Mono',monospace;margin-top:4px}
+  .receipt-thumb{width:34px;height:34px;border-radius:7px;object-fit:cover;border:1px solid var(--border-strong);flex-shrink:0}
+  .toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:var(--sand);color:var(--bg);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:600;z-index:20;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+
+
+  button,input,select{font-size:16px}
+  button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  input,select{min-height:44px}
+  .save-btn,.tool-btn,.receipt-btn{min-height:46px}
+  .app{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+  .bottom-nav{padding-bottom:max(8px,env(safe-area-inset-bottom))}
+  @media(max-width:390px){
+    .nav-label{font-size:8px}
+    .nav-item{min-width:58px}
+    .count-box b{font-size:17px}
+    .wild-grid{grid-template-columns:repeat(3,1fr)}
+  }
+  @media print{
+    .bottom-nav,.save-btn,.tool-btn,.del-btn,.receipt-actions{display:none!important}
+    body{background:#fff;color:#111}
+    .card,.trip-hero{break-inside:avoid;border:1px solid #bbb;background:#fff;color:#111}
+  }
+  ::-webkit-scrollbar{display:none;}
+
+/* Desert & Delta Light Edition */
+body{
+ background:
+ linear-gradient(rgba(16,18,13,.78),rgba(18,14,10,.88)),
+ radial-gradient(circle at 78% 12%,rgba(244,174,77,.42),transparent 24%),
+ linear-gradient(165deg,#b95f2f 0%,#d99b4a 27%,#304f3c 58%,#102d2b 100%);
+ background-attachment:fixed;
+}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.28;background:
+ radial-gradient(ellipse at 20% 28%,transparent 0 22%,rgba(255,211,132,.18) 23% 25%,transparent 26%),
+ linear-gradient(172deg,transparent 0 34%,rgba(91,42,22,.7) 35% 42%,transparent 43%),
+ linear-gradient(188deg,transparent 0 62%,rgba(27,74,61,.72) 63% 70%,transparent 71%);z-index:-1}
+.topbar,.bottom-nav{background:rgba(20,24,18,.88)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.card,.trip-hero{background:linear-gradient(145deg,rgba(47,58,40,.88),rgba(43,31,22,.9))!important;box-shadow:0 12px 35px rgba(0,0,0,.28)}
+.trip-hero{border-color:rgba(224,166,82,.48)!important}
+.save-btn{background:linear-gradient(135deg,#d49a49,#a85a31)!important;color:#17130f!important}
+.progress i{background:linear-gradient(90deg,#d89c49,#6f9a72)!important}
+.final-badge{background:rgba(35,79,62,.58)!important;border-color:rgba(218,164,83,.65)!important}
+.section-title{color:#e4b568!important}
+
+</style>
+
+<meta name="theme-color" content="#171310">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Safari Companion">
+<meta name="format-detection" content="telephone=no">
+
+<style id="desert-delta-light-theme">
+:root{
+  --bg:#f7ecd7;
+  --bg-elev:#fffaf0;
+  --bg-elev2:#f3e4c8;
+  --sand:#3f3328;
+  --sand-dim:#756453;
+  --gold:#c77b2a;
+  --gold-soft:#e9b86f;
+  --border:rgba(115,82,48,.18);
+  --border-strong:rgba(115,82,48,.30);
+  --red:#b95343;
+}
+html,body{
+  background:
+    linear-gradient(rgba(255,248,234,.78),rgba(241,232,209,.86)),
+    radial-gradient(circle at 18% 8%,rgba(240,164,75,.35),transparent 32%),
+    radial-gradient(circle at 86% 18%,rgba(101,156,137,.26),transparent 35%),
+    linear-gradient(145deg,#efb56d 0%,#f7dfb2 42%,#b7d8c8 72%,#79ad9c 100%);
+  background-attachment:fixed;
+  color:var(--sand);
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  opacity:.18;
+  background:
+    radial-gradient(ellipse at 20% 92%,#d98739 0 13%,transparent 14%),
+    radial-gradient(ellipse at 45% 100%,#e7aa61 0 20%,transparent 21%),
+    radial-gradient(ellipse at 92% 100%,#5c9a86 0 24%,transparent 25%);
+}
+.topbar,.bottom-nav{
+  background:rgba(255,250,240,.91)!important;
+  border-color:rgba(115,82,48,.18)!important;
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+.card,.trip-hero,.stat-card,.count-box,.fuel-stat div{
+  background:rgba(255,252,245,.88)!important;
+  border-color:rgba(123,86,48,.20)!important;
+  box-shadow:0 8px 24px rgba(106,76,43,.10);
+}
+.trip-hero{
+  background:
+    linear-gradient(135deg,rgba(246,187,105,.38),rgba(143,190,170,.28)),
+    rgba(255,252,245,.90)!important;
+}
+.hero-card{background:rgba(255,252,245,.88)!important}
+input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
+  background:rgba(255,250,239,.92)!important;
+  color:#3f3328!important;
+}
+.save-btn{
+  background:linear-gradient(135deg,#d98b32,#e7ad58)!important;
+  color:#fff!important;
+  box-shadow:0 7px 18px rgba(185,111,35,.22);
+}
+.progress{background:rgba(202,165,112,.22)!important}
+.progress i{background:linear-gradient(90deg,#d98b32,#6fa994)!important}
+.nav-item.active,.nav-item.active .nav-label{color:#b96d23!important}
+.section-title,.sub,.route,.hint-box,.budget-meta{color:#756453!important}
+.final-badge{
+  background:rgba(255,248,230,.88)!important;
+  color:#a85f1e!important;
+  border-color:rgba(185,109,35,.28)!important;
+}
+</style>
+
+
+<style id="bottom-slider-nav">
+.bottom-nav{
+  display:flex!important;
+  justify-content:flex-start!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+  gap:4px;
+  padding-left:10px!important;
+  padding-right:10px!important;
+  scrollbar-width:none;
+}
+.bottom-nav::-webkit-scrollbar{display:none}
+.bottom-nav .nav-item{
+  flex:0 0 68px!important;
+  min-width:68px!important;
+  scroll-snap-align:center;
+}
+.bottom-nav:after{
+  content:"";
+  flex:0 0 4px;
+}
+</style>
+
+
+<style id="main-navigation-slider-fix">
+/* Untere Hauptnavigation: Übersicht, Neu, Verlauf usw. */
+.bottom-nav{
+  position:fixed!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  width:100%!important;
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  justify-content:flex-start!important;
+  align-items:stretch!important;
+  gap:6px!important;
+  overflow-x:scroll!important;
+  overflow-y:hidden!important;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch!important;
+  scroll-snap-type:x mandatory;
+  touch-action:pan-x!important;
+  padding:8px 12px calc(8px + env(safe-area-inset-bottom))!important;
+  box-sizing:border-box!important;
+  scrollbar-width:none!important;
+}
+.bottom-nav::-webkit-scrollbar{display:none!important}
+.bottom-nav .nav-item{
+  display:flex!important;
+  flex:0 0 76px!important;
+  width:76px!important;
+  min-width:76px!important;
+  max-width:76px!important;
+  scroll-snap-align:start;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  white-space:nowrap!important;
+}
+.bottom-nav .nav-label{
+  display:block!important;
+  overflow:visible!important;
+  white-space:nowrap!important;
+}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="eyebrow">Reisekasse</div>
+    <h1>Namibia <em>&</em> Botswana</h1>
+  </header>
+  <main id="main"></main>
+  <nav id="nav"></nav>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Supabase Cloud-Synchronisierung ----------
+  var SUPABASE_URL = 'https://hvehusfbvkcaectqulf.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_HwBhQLF2Nj_3DYxQEFND9A_MtPw_RKR';
+  var CLOUD_ID = 'safari-companion-main';
+  var cloudSaveTimer = null;
+
+  async function cloudRequest(method, body){
+    var url = SUPABASE_URL + '/rest/v1/app_data?id=eq.' + encodeURIComponent(CLOUD_ID);
+    var headers = {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'resolution=merge-duplicates,return=minimal' : 'return=minimal'
+    };
+    var opts = {method:method, headers:headers};
+    if(body) opts.body = JSON.stringify(body);
+    var res = await fetch(url, opts);
+    if(!res.ok) throw new Error('Cloud-Fehler ' + res.status);
+    if(method === 'GET') return await res.json();
+  }
+
+  async function loadCloudData(){
+    try{
+      var rows = await cloudRequest('GET');
+      if(rows && rows[0] && rows[0].data){
+        var d = rows[0].data;
+        if(Array.isArray(d.expenses)) state.expenses = d.expenses;
+        if(d.settings) state.settings = Object.assign(state.settings, d.settings);
+        PAYERS = (state.settings.payers || ['Dirk & Antje','Sven']).slice();
+        localStorage.setItem('reisekasse_expenses', JSON.stringify(state.expenses));
+        localStorage.setItem('reisekasse_settings', JSON.stringify(state.settings));
+        state.storageMode = 'cloud';
+        render();
+      } else {
+        await saveCloudData();
+      }
+    }catch(e){
+      console.warn('Cloud nicht erreichbar, lokale Daten bleiben aktiv.', e);
+    }
+  }
+
+  async function saveCloudData(){
+    try{
+      await cloudRequest('POST', {id:CLOUD_ID, data:{expenses:state.expenses, settings:state.settings}, updated_at:new Date().toISOString()});
+      state.storageMode = 'cloud';
+    }catch(e){ console.warn('Cloud-Speicherung fehlgeschlagen.', e); }
+  }
+
+  function queueCloudSave(){
+    clearTimeout(cloudSaveTimer);
+    cloudSaveTimer = setTimeout(saveCloudData, 350);
+  }
+
+  // ---------- Data ----------
+  var CATEGORIES = [
+    { key:'fluege', label:'Flüge', hint:'Flugkosten für alle', icon:'✈️' },
+    { key:'tanken', label:'Tanken', hint:'Diesel & Benzin unterwegs', icon:'⛽' },
+    { key:'camping', label:'Camping', hint:'Campingplätze & Stellplätze', icon:'🏕️' },
+    { key:'lodges', label:'Lodges', hint:'Übernachtungen in Lodges', icon:'🏨' },
+    { key:'essen', label:'Essen', hint:'Restaurants & Verpflegung', icon:'🍔' },
+    { key:'einkaufe', label:'Einkäufe', hint:'Supermarkt & Vorräte', icon:'🛒' },
+    { key:'nationalparks', label:'Nationalparks', hint:'Eintritt & Concession Fees', icon:'🎟️' },
+    { key:'mietwagen', label:'Mietwagen', hint:'Miete, Versicherung, Permits', icon:'🚙' },
+    { key:'grenzgebuhren', label:'Grenzgebühren', hint:'Grenzübergänge Namibia/Botswana', icon:'💰' },
+    { key:'souvenirs', label:'Souvenirs', hint:'Andenken & Geschenke', icon:'🎁' }
+  ];
+  var CAT_BY_KEY = {};
+  CATEGORIES.forEach(function(c){ CAT_BY_KEY[c.key] = c; });
+
+  var CURRENCIES = ['EUR','NAD','BWP','USD'];
+  var CUR_SYMBOL = { EUR:'€', NAD:'N$', BWP:'P', USD:'$' };
+
+  var PAYERS = ['Dirk & Antje', 'Sven'];
+
+  var ICONS = {
+    dashboard:'<path d="M4 13h6V4H4v9z"/><path d="M14 20h6V10h-6v10z"/><path d="M4 20h6v-4H4v4z"/><path d="M14 8h6V4h-6v4z"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>',
+    list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>',
+    scale:'<path d="M12 3v3M12 6l-6 12h12L12 6z" opacity="0"/><path d="M12 4v16M7 4h10"/><path d="M4 9l3-4 3 4M14 9l3-4 3 4"/><path d="M4 9a3 3 0 006 0M14 9a3 3 0 006 0"/>',
+    packing:'<path d="M6 8V6a6 6 0 0112 0v2"/><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M8 13v3M16 13v3"/>',
+    checklist:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>',
+    stats:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    trip:'<path d="M3 6l7-3 4 3 7-3v15l-7 3-4-3-7 3z"/><path d="M10 3v15M14 6v15"/>',
+    wildlife:'<path d="M4 15c2-5 5-8 8-8s6 3 8 8"/><path d="M7 9L5 5M17 9l2-4"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/><path d="M10 18h4"/>',
+    fuel:'<path d="M5 3h9v18H5z"/><path d="M7 7h5M14 8h2l3 3v7a2 2 0 01-4 0v-5"/><path d="M19 11l2-2"/>',
+    settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.6v.2h-4V21a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 00.3-1.9A1.7 1.7 0 003 14H2.8v-4H3a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 009 4.6 1.7 1.7 0 0010 3V2.8h4V3a1.7 1.7 0 001 1.6 1.7 1.7 0 001.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 00-.3 1.9 1.7 1.7 0 001.6 1h.2v4H21a1.7 1.7 0 00-1.6 1z"/>'
+  };
+
+  // ---------- State ----------
+  var state = {
+    tab: 'dashboard',
+    expenses: [],
+    loaded: false,
+    editingId: null,
+    form: null,
+    histFilterCat: 'all',
+    histFilterPayer: 'all',
+    histFilterType: 'all',
+    pendingDelete: null,
+    storageMode: 'local',
+    settings: {
+      tripStart: '2026-08-22',
+      tripEnd: '2026-09-18',
+      budgets: { EUR:0, NAD:0, BWP:0, USD:0 },
+      payers: ['Dirk & Antje','Sven'],
+      fuelEntries: [],
+      wildlifeEntries: [],
+      itineraryEntries: [],
+      checklistEntries: [],
+      packingEntries: []
+    }
+  };
+
+  function blankForm(){
+    return {
+      category: 'tanken',
+      description: '',
+      amount: '',
+      currency: 'EUR',
+      payer: 'Dirk & Antje',
+      type: 'gemeinsam',
+      date: new Date().toISOString().slice(0,10),
+      receipt: null
+    };
+  }
+  state.form = blankForm();
+
+  // ---------- Storage ----------
+  // Nutzt window.storage, wenn die App innerhalb von Claude läuft.
+  // Läuft die App als eigenständige Datei (z.B. auf dem iPhone geöffnet
+  // oder zum Home-Bildschirm hinzugefügt), wird automatisch auf das
+  // browsereigene localStorage umgeschaltet, damit Einträge erhalten bleiben.
+  var hasClaudeStorage = (typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function');
+
+  async function loadExpenses(){
+    if(hasClaudeStorage){
+      state.storageMode = 'claude';
+      try{
+        var res = await window.storage.get('expenses', false);
+        state.expenses = res && res.value ? JSON.parse(res.value) : [];
+      }catch(e){
+        state.expenses = []; // noch kein Eintrag vorhanden
+      }
+    } else {
+      state.storageMode = 'local';
+      try{
+        var raw = localStorage.getItem('reisekasse_expenses');
+        state.expenses = raw ? JSON.parse(raw) : [];
+      }catch(e){
+        state.expenses = [];
+      }
+    }
+    try{
+      var savedSettings = localStorage.getItem('reisekasse_settings');
+      if(savedSettings) state.settings = Object.assign(state.settings, JSON.parse(savedSettings));
+      state.settings.budgets = Object.assign({EUR:0,NAD:0,BWP:0,USD:0}, state.settings.budgets || {});
+      if(!Array.isArray(state.settings.payers) || !state.settings.payers.length) state.settings.payers=['Dirk & Antje','Sven'];
+      if(!Array.isArray(state.settings.fuelEntries)) state.settings.fuelEntries=[];
+      if(!Array.isArray(state.settings.wildlifeEntries)) state.settings.wildlifeEntries=[];
+      if(!Array.isArray(state.settings.itineraryEntries)) state.settings.itineraryEntries=[];
+      if(!Array.isArray(state.settings.checklistEntries)) state.settings.checklistEntries=[];
+      if(!Array.isArray(state.settings.packingEntries) || !state.settings.packingEntries.length) state.settings.packingEntries=[{"id": 210000, "category": "Dokumente", "text": "Reisepass (mind. 6 Monate gültig, mind. 2 leere Seiten)", "status": "offen"}, {"id": 210001, "category": "Dokumente", "text": "Nationaler Führerschein + Internationaler Führerschein", "status": "offen"}, {"id": 210002, "category": "Dokumente", "text": "Kreditkarten (mind. 2)", "status": "offen"}, {"id": 210003, "category": "Dokumente", "text": "Bargeld USD sowie NAD/BWP", "status": "offen"}, {"id": 210004, "category": "Dokumente", "text": "Auslandskranken- und Rückholversicherung", "status": "offen"}, {"id": 210005, "category": "Dokumente", "text": "Mietwagenvertrag inkl. Notfallnummer", "status": "offen"}, {"id": 210006, "category": "Dokumente", "text": "Buchungsbestätigungen", "status": "offen"}, {"id": 210007, "category": "Dokumente", "text": "Flugtickets", "status": "offen"}, {"id": 210008, "category": "Dokumente", "text": "Impfpass", "status": "offen"}, {"id": 210009, "category": "Dokumente", "text": "Passfotos", "status": "offen"}, {"id": 210010, "category": "Dokumente", "text": "Kopien wichtiger Dokumente – Papier + Cloud", "status": "offen"}, {"id": 210011, "category": "Dokumente", "text": "Kontakte der deutschen Botschaften", "status": "offen"}, {"id": 210012, "category": "Reisemedizin", "text": "Malariaprophylaxe nach ärztlicher Rücksprache", "status": "offen"}, {"id": 210013, "category": "Reisemedizin", "text": "Mückenschutz mit hohem DEET-Anteil", "status": "offen"}, {"id": 210014, "category": "Reisemedizin", "text": "Moskitonetz", "status": "offen"}, {"id": 210015, "category": "Reisemedizin", "text": "Persönliche Medikamente + Rezeptkopie", "status": "offen"}, {"id": 210016, "category": "Reisemedizin", "text": "Schmerz-/Fiebermittel", "status": "offen"}, {"id": 210017, "category": "Reisemedizin", "text": "Durchfallmittel + Elektrolyte", "status": "offen"}, {"id": 210018, "category": "Reisemedizin", "text": "Mittel gegen Übelkeit", "status": "offen"}, {"id": 210019, "category": "Reisemedizin", "text": "Antihistaminikum", "status": "offen"}, {"id": 210020, "category": "Reisemedizin", "text": "Pflaster und Verbandsmaterial", "status": "offen"}, {"id": 210021, "category": "Reisemedizin", "text": "Desinfektionsmittel", "status": "offen"}, {"id": 210022, "category": "Reisemedizin", "text": "Pinzette, Schere, Zeckenzange", "status": "offen"}, {"id": 210023, "category": "Reisemedizin", "text": "Fieberthermometer", "status": "offen"}, {"id": 210024, "category": "Reisemedizin", "text": "Sonnencreme + Lippenpflege mit LSF", "status": "offen"}, {"id": 210025, "category": "Reisemedizin", "text": "Aftersun", "status": "offen"}, {"id": 210026, "category": "Reisemedizin", "text": "Desinfektionsgel", "status": "offen"}, {"id": 210027, "category": "Kleidung", "text": "Zwiebellook, atmungsaktiv und schnelltrocknend", "status": "offen"}, {"id": 210028, "category": "Kleidung", "text": "Neutrale Farben: khaki, oliv, braun", "status": "offen"}, {"id": 210029, "category": "Kleidung", "text": "Lange Hosen und Langarmshirts", "status": "offen"}, {"id": 210030, "category": "Kleidung", "text": "T-Shirts und kurze Hosen", "status": "offen"}, {"id": 210031, "category": "Kleidung", "text": "Fleecejacke/Softshell", "status": "offen"}, {"id": 210032, "category": "Kleidung", "text": "Leichte Regenjacke", "status": "offen"}, {"id": 210033, "category": "Kleidung", "text": "Mütze und Handschuhe", "status": "offen"}, {"id": 210034, "category": "Kleidung", "text": "Geschlossene Schuhe/Wanderschuhe", "status": "offen"}, {"id": 210035, "category": "Kleidung", "text": "Sandalen", "status": "offen"}, {"id": 210036, "category": "Kleidung", "text": "Hut/Cap + Sonnenbrille", "status": "offen"}, {"id": 210037, "category": "Kleidung", "text": "Buff/Halstuch", "status": "offen"}, {"id": 210038, "category": "Kleidung", "text": "Badesachen", "status": "offen"}, {"id": 210039, "category": "Kleidung", "text": "Unterwäsche und Socken", "status": "offen"}, {"id": 210040, "category": "Auto", "text": "Werkzeugset", "status": "offen"}, {"id": 210041, "category": "Auto", "text": "2 Ersatzreifen + Reifenpannenset", "status": "offen"}, {"id": 210042, "category": "Auto", "text": "Kompressor + Luftdruckmesser", "status": "offen"}, {"id": 210043, "category": "Auto", "text": "Wagenheber + Radmutternschlüssel testen", "status": "offen"}, {"id": 210044, "category": "Auto", "text": "Abschleppseil", "status": "offen"}, {"id": 210045, "category": "Auto", "text": "Starterkabel", "status": "offen"}, {"id": 210046, "category": "Auto", "text": "Ersatzsicherungen und Glühbirnen", "status": "offen"}, {"id": 210047, "category": "Auto", "text": "Panzertape/Kabelbinder", "status": "offen"}, {"id": 210048, "category": "Auto", "text": "Erste-Hilfe-Kasten", "status": "offen"}, {"id": 210049, "category": "Auto", "text": "Warndreieck + Warnweste", "status": "offen"}, {"id": 210050, "category": "Auto", "text": "Sandbleche", "status": "offen"}, {"id": 210051, "category": "Auto", "text": "Sprit- und Wasserkanister", "status": "offen"}, {"id": 210052, "category": "Auto", "text": "Motoröl + Kühlwasser", "status": "offen"}, {"id": 210053, "category": "Auto", "text": "Arbeitshandschuhe", "status": "offen"}, {"id": 210054, "category": "Auto", "text": "Plane/Persenning", "status": "offen"}, {"id": 210055, "category": "Auto", "text": "GPS/Offline-Karten", "status": "offen"}, {"id": 210056, "category": "Auto", "text": "Satellitentelefon/Notfunkgerät", "status": "offen"}, {"id": 210057, "category": "Auto", "text": "Stirnlampe + Batterien", "status": "offen"}, {"id": 210058, "category": "Auto", "text": "Powerbank + Autoladekabel", "status": "offen"}, {"id": 210059, "category": "Sonstiges", "text": "Fernglas", "status": "offen"}, {"id": 210060, "category": "Sonstiges", "text": "Kamera + Akkus/Speicherkarten", "status": "offen"}, {"id": 210061, "category": "Sonstiges", "text": "Steckdosenadapter Typ D/M", "status": "offen"}, {"id": 210062, "category": "Sonstiges", "text": "Kühlbox", "status": "offen"}, {"id": 210063, "category": "Sonstiges", "text": "Wasserfilter/Reinigungstabletten", "status": "offen"}, {"id": 210064, "category": "Sonstiges", "text": "Insektenspray", "status": "offen"}, {"id": 210065, "category": "Sonstiges", "text": "Schlafsack/Decke", "status": "offen"}, {"id": 210066, "category": "Sonstiges", "text": "Müllbeutel", "status": "offen"}, {"id": 210067, "category": "Sonstiges", "text": "Multitool", "status": "offen"}, {"id": 210068, "category": "Sonstiges", "text": "Feuchttücher + Toilettenpapier", "status": "offen"}];
+      PAYERS = state.settings.payers.slice();
+    }catch(e){}
+    state.loaded = true;
+    render();
+    loadCloudData();
+  }
+
+  async function persist(){
+    if(state.storageMode === 'claude'){
+      try{
+        await window.storage.set('expenses', JSON.stringify(state.expenses), false);
+        return;
+      }catch(e){ /* fällt unten auf localStorage zurück */ }
+    }
+    try{
+      localStorage.setItem('reisekasse_expenses', JSON.stringify(state.expenses));
+    }catch(e){ /* silent */ }
+    queueCloudSave();
+  }
+
+  function persistSettings(){
+    try{ localStorage.setItem('reisekasse_settings', JSON.stringify(state.settings)); }catch(e){}
+    queueCloudSave();
+  }
+
+  function daysBetween(a,b){
+    var one = 86400000;
+    return Math.ceil((new Date(b+'T00:00:00') - new Date(a+'T00:00:00'))/one);
+  }
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
+  function showToast(msg){
+    var old=document.querySelector('.toast'); if(old) old.remove();
+    var t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+    document.body.appendChild(t); setTimeout(function(){t.remove();},2200);
+  }
+  function resetAllData(){
+    if(!confirm('Wirklich alle App-Daten löschen? Erstelle vorher unbedingt ein Backup.')) return;
+    if(!confirm('Letzte Sicherheitsfrage: Alle Ausgaben, Belege, Tankstopps, Sichtungen, Reiseetappen und Checklisten löschen?')) return;
+    state.expenses=[];
+    state.settings.budgets={EUR:0,NAD:0,BWP:0,USD:0};
+    state.settings.fuelEntries=[];
+    state.settings.wildlifeEntries=[];
+    state.settings.itineraryEntries=[];
+    state.settings.checklistEntries=[];
+    persist();persistSettings();render();showToast('Alle Daten wurden gelöscht');
+  }
+
+  function exportBackup(){
+    var data={app:'Safari Companion · Namibia & Botswana',version:'1.1',created:new Date().toISOString(),expenses:state.expenses,settings:state.settings};
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='safari-companion-backup-'+todayISO()+'.json'; a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+    showToast('Backup wurde erstellt');
+  }
+  function importBackup(file){
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var data=JSON.parse(r.result);
+        if(!Array.isArray(data.expenses)) throw new Error();
+        state.expenses=data.expenses;
+        if(data.settings) state.settings=Object.assign(state.settings,data.settings);
+        persist(); persistSettings(); render(); showToast('Backup wiederhergestellt');
+      }catch(e){ alert('Diese Datei ist kein gültiges Reisekassen-Backup.'); }
+    };
+    r.readAsText(file);
+  }
+
+  // ---------- Helpers ----------
+  function fmt(amount, currency){
+    var n = Number(amount)||0;
+    var s = n.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
+    var sym = CUR_SYMBOL[currency] || currency;
+    return sym === '€' ? (s + ' €') : (sym + ' ' + s);
+  }
+  function totalsByCurrency(list){
+    var t = {};
+    list.forEach(function(e){
+      t[e.currency] = (t[e.currency]||0) + Number(e.amount||0);
+    });
+    return t;
+  }
+  function totalsPill(list){
+    var t = totalsByCurrency(list);
+    var keys = Object.keys(t);
+    if(!keys.length) return '<span class="pill">Noch keine Ausgaben</span>';
+    return keys.sort().map(function(cur){
+      return '<span class="pill"><b>'+fmt(t[cur], cur)+'</b></span>';
+    }).join('');
+  }
+  function dayLabel(dateStr){
+    var d = new Date(dateStr+'T00:00:00');
+    return d.toLocaleDateString('de-DE', {weekday:'short', day:'2-digit', month:'2-digit', year:'numeric'});
+  }
+  function svg(paths, extraClass){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">'+paths+'</svg>';
+  }
+
+  // ---------- Render: Dashboard ----------
+  function renderDashboard(){
+    var html = '<div class="final-badge">✓ DESERT & DELTA EDITION · REISEBEREIT</div>';
+    var today=todayISO(), start=state.settings.tripStart, end=state.settings.tripEnd;
+    var until=daysBetween(today,start), duration=daysBetween(start,end)+1;
+    var status=until>0 ? until : (daysBetween(today,end)>=0 ? 0 : daysBetween(end,today));
+    html += '<div class="trip-hero"><h2>🦁 Safari 2026</h2><div class="route">Namibia → Botswana · '+dayLabel(start)+' bis '+dayLabel(end)+'</div>';
+    html += '<div class="count-grid"><div class="count-box"><b>'+status+'</b><span>'+(until>0?'Tage bis Start':(daysBetween(today,end)>=0?'Reise läuft':'Tage zurück'))+'</span></div>';
+    html += '<div class="count-box"><b>'+duration+'</b><span>Reisetage</span></div><div class="count-box"><b>'+state.expenses.length+'</b><span>Ausgaben</span></div></div></div>';
+
+    html += '<div class="section-title">Gesamt</div><div class="totals-strip">'+totalsPill(state.expenses)+'</div>';
+    var openTasks=state.settings.checklistEntries.filter(function(x){return !x.done;}).length;
+    html += '<div class="stat-grid" style="margin-top:12px"><div class="stat-card"><b>'+openTasks+'</b><span>Offene Aufgaben</span></div><div class="stat-card"><b>'+state.settings.itineraryEntries.length+'</b><span>Reiseetappen</span></div><div class="stat-card"><b>'+state.settings.fuelEntries.length+'</b><span>Tankstopps</span></div><div class="stat-card"><b>'+state.settings.wildlifeEntries.length+'</b><span>Sichtungen</span></div></div>';
+
+    html += '<div class="section-title">Budget</div><div class="card">';
+    var totals=totalsByCurrency(state.expenses);
+    CURRENCIES.forEach(function(cur){
+      var budget=Number(state.settings.budgets[cur]||0), used=Number(totals[cur]||0);
+      var pct=budget>0?Math.min(100,Math.round(used/budget*100)):0, left=budget-used;
+      html += '<div class="budget-row"><div class="budget-head"><span>'+cur+' · '+fmt(used,cur)+' ausgegeben</span><b>'+(budget?fmt(left,cur)+' frei':'kein Budget')+'</b></div>';
+      html += '<div class="progress"><i style="width:'+pct+'%"></i></div><div class="budget-meta"><span>'+pct+' % genutzt</span><span>'+(budget?'Budget '+fmt(budget,cur):'unten festlegen')+'</span></div></div>';
+    });
+    html += '</div>';
+
+    html += '<div class="section-title">Budgets festlegen</div><div class="card"><div class="budget-inputs">';
+    CURRENCIES.forEach(function(cur){ html += '<label>'+cur+'<input type="number" inputmode="decimal" min="0" step="0.01" data-budget="'+cur+'" value="'+(state.settings.budgets[cur]||'')+'" placeholder="0"></label>'; });
+    html += '</div><button class="save-btn" id="save-budgets">Budgets speichern</button></div>';
+
+    html += '<div class="section-title">Datensicherung</div><div class="card"><div class="tool-grid"><button class="tool-btn" id="backup-export">⬇️ Backup erstellen</button><button class="tool-btn" id="backup-import">⬆️ Backup laden</button></div>';
+    html += '<input id="backup-file" type="file" accept=".json,application/json" style="display:none"><div class="sub" style="margin-top:10px;line-height:1.45">Sichert Ausgaben und Budgets als JSON-Datei. Bewahre sie z. B. in iCloud Drive auf.</div></div>';
+
+    html += '<div class="section-title">Nach Kategorie</div><div class="card">';
+    CATEGORIES.forEach(function(cat, i){
+      var list=state.expenses.filter(function(e){return e.category===cat.key;}), t=totalsByCurrency(list), keys=Object.keys(t).sort();
+      var amounts=keys.length?keys.map(function(c){return fmt(t[c],c);}).join('<br>'):'—';
+      html += '<div class="cat-row" style="'+(i?'border-top:1px solid var(--border);':'')+'"><div class="stamp sm">'+cat.icon+'</div><div class="meta"><div class="label">'+cat.label+'</div><div class="sub">'+cat.hint+'</div></div><div class="amounts">'+amounts+'</div></div>';
+    });
+    html += '</div>';
+
+    html += '<div class="section-title">Nach Zahler</div><div class="card">';
+    var byCur={};
+    state.expenses.forEach(function(e){byCur[e.currency]=byCur[e.currency]||{};byCur[e.currency][e.payer]=(byCur[e.currency][e.payer]||0)+Number(e.amount||0);});
+    var curKeys=Object.keys(byCur).sort();
+    if(!curKeys.length) html += '<div class="empty" style="padding:20px;">Noch keine Einträge vorhanden.</div>';
+    else curKeys.forEach(function(cur,idx){
+      var sum=0; PAYERS.forEach(function(p){sum+=byCur[cur][p]||0;}); sum=sum||1;
+      html += '<div style="'+(idx?'margin-top:16px;':'')+'"><div class="sub" style="font-family:\'IBM Plex Mono\',monospace;">'+cur+'</div>';
+      PAYERS.forEach(function(p){var val=byCur[cur][p]||0;html+='<div class="budget-meta" style="margin-top:7px"><span>'+p+'</span><span>'+fmt(val,cur)+'</span></div><div class="progress"><i style="width:'+Math.round(val/sum*100)+'%"></i></div>';});
+      html += '</div>';
+    });
+    html += '</div><div class="sub" style="margin:8px 4px 0;">Enthält gemeinsame & persönliche Ausgaben. Im „Ausgleich" zählen nur gemeinsame.</div>';
+    return html;
+  }
+
+  // ---------- Render: Form ----------
+  function renderForm(){
+    var f = state.form;
+    var isEdit = state.editingId !== null;
+    var html = '<div class="section-title">'+(isEdit?'Ausgabe bearbeiten':'Neue Ausgabe')+'</div>';
+    html += '<div class="card">';
+
+    html += '<div class="field"><label>Kategorie</label><div class="grid-cats">';
+    CATEGORIES.forEach(function(cat){
+      var active = f.category===cat.key;
+      html += '<button type="button" class="cat-btn'+(active?' active':'')+'" data-cat="'+cat.key+'">';
+      html += '<div class="stamp sm">'+cat.icon+'</div><span>'+cat.label+'</span></button>';
+    });
+    html += '</div></div>';
+
+    html += '<div class="field"><label>Beschreibung</label><input type="text" id="f-desc" placeholder="z.B. Road Permit Botswana" value="'+escapeAttr(f.description)+'"></div>';
+
+    html += '<div class="field"><label>Betrag</label><input type="number" inputmode="decimal" step="0.01" id="f-amount" placeholder="0.00" value="'+escapeAttr(f.amount)+'"></div>';
+
+    html += '<div class="field"><label>Währung</label><div class="currency-row">';
+    CURRENCIES.forEach(function(cur){
+      html += '<button type="button" data-cur="'+cur+'" class="'+(f.currency===cur?'active':'')+'">'+cur+'</button>';
+    });
+    html += '</div></div>';
+
+    html += '<div class="field"><label>Bezahlt von</label><div class="seg">';
+    PAYERS.forEach(function(p){
+      html += '<button type="button" data-payer="'+escapeAttr(p)+'" class="'+(f.payer===p?'active':'')+'">'+p+'</button>';
+    });
+    html += '</div></div>';
+
+    html += '<div class="field"><label>Art der Ausgabe</label><div class="seg">';
+    html += '<button type="button" data-type="gemeinsam" class="'+(f.type==='gemeinsam'?'active':'')+'">🤝 Gemeinsam</button>';
+    html += '<button type="button" data-type="persoenlich" class="'+(f.type==='persoenlich'?'active':'')+'">🔒 Persönlich</button>';
+    html += '</div><div class="sub" style="margin-top:8px;line-height:1.4;">';
+    html += f.type==='persoenlich'
+      ? 'Persönliche Ausgaben erscheinen weiter in Übersicht & Verlauf, fließen aber nicht in den „Ausgleich" ein.'
+      : 'Gemeinsame Ausgaben werden am Ende 50/50 zwischen Dirk & Antje und Sven verrechnet.';
+    html += '</div></div>';
+
+    html += '<div class="field"><label>Beleg (optional)</label><div class="receipt-box"><div class="receipt-actions"><button type="button" class="receipt-btn" id="receipt-camera">📷 Fotografieren</button><button type="button" class="receipt-btn" id="receipt-library">🖼️ Auswählen</button></div><input id="receipt-input" type="file" accept="image/*"><input id="receipt-camera-input" type="file" accept="image/*" capture="environment">';
+    if(f.receipt) html += '<div class="receipt-preview"><img src="'+f.receipt+'" alt="Beleg"><div class="receipt-badge">Beleg gespeichert</div><button type="button" class="cancel-edit" id="receipt-remove">Beleg entfernen</button></div>';
+    html += '</div></div>';
+
+    html += '<div class="field"><label>Datum</label><input type="date" id="f-date" value="'+f.date+'"></div>';
+
+    html += '<button class="save-btn" id="f-save">'+(isEdit?'Änderungen speichern':'Ausgabe speichern')+'</button>';
+    if(isEdit){
+      html += '<button class="cancel-edit" id="f-cancel">Bearbeitung abbrechen</button>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function escapeAttr(s){
+    return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  }
+
+  // ---------- Render: History ----------
+  function renderHistory(){
+    var html = '<div class="section-title">Verlauf</div>';
+    html += '<div class="filters">';
+    html += '<span class="chip'+(state.histFilterCat==='all'?' active':'')+'" data-fcat="all">Alle</span>';
+    CATEGORIES.forEach(function(c){
+      html += '<span class="chip'+(state.histFilterCat===c.key?' active':'')+'" data-fcat="'+c.key+'">'+c.label+'</span>';
+    });
+    html += '</div>';
+    html += '<div class="filters">';
+    html += '<span class="chip'+(state.histFilterPayer==='all'?' active':'')+'" data-fpayer="all">Alle Zahler</span>';
+    PAYERS.forEach(function(p){
+      html += '<span class="chip'+(state.histFilterPayer===p?' active':'')+'" data-fpayer="'+escapeAttr(p)+'">'+p+'</span>';
+    });
+    html += '</div>';
+    html += '<div class="filters">';
+    html += '<span class="chip'+(state.histFilterType==='all'?' active':'')+'" data-ftype="all">Gemeinsam & Persönlich</span>';
+    html += '<span class="chip'+(state.histFilterType==='gemeinsam'?' active':'')+'" data-ftype="gemeinsam">🤝 Gemeinsam</span>';
+    html += '<span class="chip'+(state.histFilterType==='persoenlich'?' active':'')+'" data-ftype="persoenlich">🔒 Persönlich</span>';
+    html += '</div>';
+
+    var list = state.expenses.filter(function(e){
+      var okCat = state.histFilterCat==='all' || e.category===state.histFilterCat;
+      var okPayer = state.histFilterPayer==='all' || e.payer===state.histFilterPayer;
+      var okType = state.histFilterType==='all' || (e.type||'gemeinsam')===state.histFilterType;
+      return okCat && okPayer && okType;
+    }).slice().sort(function(a,b){ return b.date.localeCompare(a.date) || b.id - a.id; });
+
+    if(!list.length){
+      html += '<div class="empty">Keine Einträge gefunden.<br>Füge über „Neu" deine erste Ausgabe hinzu.</div>';
+      return html;
+    }
+
+    var lastDay = null;
+    list.forEach(function(e){
+      if(e.date !== lastDay){
+        if(lastDay!==null) html += '</div>';
+        html += '<div class="day-label">'+dayLabel(e.date)+'</div><div class="card">';
+        lastDay = e.date;
+      }
+      var cat = CAT_BY_KEY[e.category];
+      var pendingThis = state.pendingDelete === e.id;
+      html += '<div class="exp-item" data-id="'+e.id+'">';
+      html += e.receipt ? '<img class="receipt-thumb" data-edit="'+e.id+'" src="'+e.receipt+'" alt="Beleg">' : '<div class="stamp sm" data-edit="'+e.id+'">'+cat.icon+'</div>';
+      html += '<div class="meta" data-edit="'+e.id+'"><div class="desc">'+escapeAttr(e.description||cat.label)+'<span class="payer-tag">'+e.payer+'</span>'+((e.type==='persoenlich')?'<span class="payer-tag" style="color:var(--rust);border-color:var(--rust);">🔒 privat</span>':'')+'</div>';
+      html += '<div class="sub">'+cat.label+'</div></div>';
+      html += '<div class="amt" data-edit="'+e.id+'">'+fmt(e.amount, e.currency)+'</div>';
+      if(pendingThis){
+        html += '<div class="del-confirm"><button class="yes" data-del-yes="'+e.id+'">Löschen</button><button data-del-no="1">Abbr.</button></div>';
+      } else {
+        html += '<button class="del-btn" data-del="'+e.id+'">✕</button>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  // ---------- Render: Settlement ----------
+  function renderSettlement(){
+    var html='<div class="section-title">Ausgleich</div>';
+    var shared=state.expenses.filter(function(e){return e.type!=='persoenlich';});
+    var personalCount=state.expenses.length-shared.length, byCur={};
+    shared.forEach(function(e){byCur[e.currency]=byCur[e.currency]||{};byCur[e.currency][e.payer]=(byCur[e.currency][e.payer]||0)+Number(e.amount||0);});
+    var curKeys=Object.keys(byCur).sort();
+    if(!curKeys.length) return html+'<div class="empty">Noch keine gemeinsamen Ausgaben erfasst.</div>';
+    html+='<div class="card">';
+    curKeys.forEach(function(cur,idx){
+      var total=0; PAYERS.forEach(function(p){total+=byCur[cur][p]||0;});
+      var share=total/PAYERS.length, debtors=[], creditors=[];
+      PAYERS.forEach(function(p){var bal=(byCur[cur][p]||0)-share;if(bal>0.005)creditors.push({p:p,v:bal});else if(bal<-0.005)debtors.push({p:p,v:-bal});});
+      html+='<div class="settle-currency-block" style="'+(idx?'margin-top:18px;padding-top:18px;border-top:1px solid var(--border);':'')+'"><div class="cur-label">'+cur+' · Gesamt '+fmt(total,cur)+' · Anteil je '+fmt(share,cur)+'</div>';
+      if(!debtors.length) html+='<div class="settle-hero" style="padding:14px 4px"><div class="verdict">In <b>'+cur+'</b> ist alles ausgeglichen.</div></div>';
+      else{
+        var transfers=[];
+        debtors.forEach(function(d){creditors.forEach(function(c){if(d.v>.005&&c.v>.005){var x=Math.min(d.v,c.v);transfers.push({from:d.p,to:c.p,v:x});d.v-=x;c.v-=x;}});});
+        transfers.forEach(function(t){html+='<div class="settle-hero" style="padding:12px 4px"><div class="verdict"><b>'+t.from+'</b> zahlt<br><b>'+fmt(t.v,cur)+'</b><br>an '+t.to+'</div></div>';});
+      }
+      html+='</div>';
+    });
+    html+='</div>';
+    if(personalCount) html+='<div class="sub" style="margin:12px 4px">🔒 '+personalCount+' persönliche Ausgabe'+(personalCount===1?'':'n')+' nicht berücksichtigt.</div>';
+    return html;
+  }
+
+  // ---------- Render: Settings ----------
+
+
+
+
+  function exportCSV(){
+    var rows=[['Datum','Kategorie','Beschreibung','Betrag','Währung','Bezahlt von','Art']];
+    state.expenses.slice().sort(function(a,b){return a.date.localeCompare(b.date);}).forEach(function(e){
+      rows.push([e.date,(CAT_BY_KEY[e.category]||{}).label||e.category,e.description||'',Number(e.amount).toFixed(2),e.currency,e.payer,e.type||'gemeinsam']);
+    });
+    var csv='\ufeff'+rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(';');}).join('\n');
+    var blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='safari-companion-ausgaben-'+todayISO()+'.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);showToast('CSV-Export erstellt');
+  }
+
+
+  function renderPacking(){
+    var items=state.settings.packingEntries, done=items.filter(function(x){return x.status==='gepackt';}).length, localBuy=items.filter(function(x){return x.status==='vorort';}).length;
+    var html='<div class="section-title">Safari-Packliste</div><div class="trip-hero"><h2>🎒 Packliste</h2><div class="route">'+done+' von '+items.length+' gepackt</div><div class="progress"><i style="width:'+(items.length?Math.round(done/items.length*100):0)+'%"></i></div></div>';
+    html+='<div class="card"><div class="field"><label>Neuer Eintrag</label><input id="pack-text" placeholder="Gegenstand hinzufügen"></div><div class="field"><label>Kategorie</label><select id="pack-cat"><option>Dokumente</option><option>Reisemedizin</option><option>Kleidung</option><option>Auto</option><option>Sonstiges</option></select></div><button class="save-btn" id="pack-add">Hinzufügen</button></div>';
+    ['Dokumente','Reisemedizin','Kleidung','Auto','Sonstiges'].forEach(function(cat){
+      var list=items.filter(function(x){return x.category===cat;}); if(!list.length)return;
+      html+='<div class="section-title">'+cat+'</div><div class="card">';
+      list.forEach(function(x){html+='<div class="check-row '+(x.status==='gepackt'?'done':'')+'"><div class="check-text">'+escapeAttr(x.text)+'<div style="margin-top:7px"><select data-pack-select="'+x.id+'" style="width:100%;min-height:40px"><option value="offen" '+(x.status==='offen'?'selected':'')+'>○ Offen</option><option value="besorgt" '+(x.status==='besorgt'?'selected':'')+'>🛍️ Besorgt</option><option value="vorort" '+(x.status==='vorort'?'selected':'')+'>📍 Wird vor Ort gekauft</option><option value="gepackt" '+(x.status==='gepackt'?'selected':'')+'>✅ Gepackt</option></select></div></div><button class="del-btn" data-pack-del="'+x.id+'">✕</button></div>';});
+      html+='</div>';
+    }); return html;
+  }
+
+  function renderChecklist(){
+    var items=state.settings.checklistEntries, done=items.filter(function(x){return x.done;}).length;
+    var html='<div class="section-title">Reise-Checkliste</div><div class="trip-hero"><h2>✅ Vorbereitung</h2><div class="route">'+done+' von '+items.length+' erledigt</div><div class="progress"><i style="width:'+(items.length?Math.round(done/items.length*100):0)+'%"></i></div></div>';
+    html+='<div class="card"><div class="fuel-grid"><div class="field"><label>Aufgabe</label><input id="check-text" type="text" placeholder="z. B. Reisepässe einpacken"></div><div class="field"><label>Kategorie</label><select id="check-cat"><option>Dokumente</option><option>Gepäck</option><option>Gesundheit</option><option>Technik</option><option>Fahrzeug</option><option>Buchungen</option><option>Sonstiges</option></select></div></div><button class="save-btn" id="check-add">Aufgabe hinzufügen</button></div>';
+    var cats=['Dokumente','Buchungen','Gepäck','Gesundheit','Technik','Fahrzeug','Sonstiges'];
+    cats.forEach(function(cat){var list=items.filter(function(x){return x.category===cat;});if(!list.length)return;html+='<div class="section-title">'+cat+'</div><div class="card">'+list.map(function(x){return '<div class="check-row '+(x.done?'done':'')+'"><button class="check-toggle" data-check-toggle="'+x.id+'">'+(x.done?'✓':'')+'</button><div class="check-text">'+escapeAttr(x.text)+'</div><button class="del-btn" data-check-del="'+x.id+'">✕</button></div>';}).join('')+'</div>';});
+    if(!items.length)html+='<div class="empty">Noch keine Aufgaben angelegt.</div>';
+    return html;
+  }
+
+  function renderStats(){
+    var totals=totalsByCurrency(state.expenses), shared=state.expenses.filter(function(e){return e.type!=='persoenlich';});
+    var receipts=state.expenses.filter(function(e){return !!e.receipt;}).length;
+    var html='<div class="section-title">Statistik & Export</div><div class="stat-grid">';
+    html+='<div class="stat-card"><b>'+state.expenses.length+'</b><span>Ausgaben gesamt</span></div>';
+    html+='<div class="stat-card"><b>'+shared.length+'</b><span>Gemeinsame Ausgaben</span></div>';
+    html+='<div class="stat-card"><b>'+receipts+'</b><span>Gespeicherte Belege</span></div>';
+    html+='<div class="stat-card"><b>'+state.settings.wildlifeEntries.length+'</b><span>Safari-Sichtungen</span></div></div>';
+    html+='<div class="section-title">Ausgaben je Währung</div><div class="card">';
+    CURRENCIES.forEach(function(cur){var v=totals[cur]||0,b=Number(state.settings.budgets[cur]||0),pct=b?Math.min(100,Math.round(v/b*100)):0;html+='<div class="rank-row"><div class="rank-head"><span>'+cur+'</span><b>'+fmt(v,cur)+'</b></div><div class="progress"><i style="width:'+(b?pct:(v?100:0))+'%"></i></div><div class="budget-meta"><span>'+(b?pct+' % des Budgets':'ohne Budget')+'</span><span>'+(b?'Rest '+fmt(b-v,cur):'')+'</span></div></div>';});
+    html+='</div><div class="section-title">Top-Kategorien</div><div class="card">';
+    var cats=CATEGORIES.map(function(c){var n=state.expenses.filter(function(e){return e.category===c.key;}).reduce(function(a,e){return a+Number(e.amount||0);},0);return {c:c,n:n};}).filter(function(x){return x.n>0;}).sort(function(a,b){return b.n-a.n;});
+    if(!cats.length)html+='<div class="empty" style="padding:20px">Noch keine Daten.</div>';
+    else{var max=cats[0].n;cats.slice(0,6).forEach(function(x){html+='<div class="rank-row"><div class="rank-head"><span>'+x.c.icon+' '+x.c.label+'</span><b>'+x.n.toLocaleString("de-DE",{maximumFractionDigits:2})+'</b></div><div class="progress"><i style="width:'+Math.round(x.n/max*100)+'%"></i></div></div>';});}
+    html+='</div><div class="section-title">Daten exportieren</div><div class="card"><button class="save-btn" id="csv-export">📊 Ausgaben als CSV exportieren</button><button class="tool-btn" id="print-report" style="width:100%;margin-top:9px">🖨️ Übersicht drucken / als PDF sichern</button><div class="hint-box">Die CSV-Datei kann in Excel, Numbers oder anderen Tabellenprogrammen geöffnet werden.</div></div>';
+    return html;
+  }
+
+  function renderTrip(){
+    var entries=state.settings.itineraryEntries.slice().sort(function(a,b){return a.date.localeCompare(b.date)||a.id-b.id;});
+    var html='<div class="section-title">Reiseplan</div><div class="trip-hero"><h2>🗺️ Namibia & Botswana</h2><div class="route">'+dayLabel(state.settings.tripStart)+' bis '+dayLabel(state.settings.tripEnd)+'</div></div>';
+    html+='<div class="section-title">Etappe hinzufügen</div><div class="card">';
+    html+='<div class="fuel-grid"><div class="field"><label>Datum</label><input id="trip-date" type="date" value="'+state.settings.tripStart+'"></div><div class="field"><label>Art</label><select id="trip-type"><option>🏨 Lodge</option><option>🏕️ Camping</option><option>🚙 Fahrt</option><option>🦁 Aktivität</option><option>✈️ Flug</option><option>📍 Sonstiges</option></select></div></div>';
+    html+='<div class="field"><label>Titel</label><input id="trip-title" type="text" placeholder="z. B. Sunbirds Lodge Chobe"></div>';
+    html+='<div class="field"><label>Ort / Strecke</label><input id="trip-place" type="text" placeholder="z. B. Kasane, Botswana"></div>';
+    html+='<div class="field"><label>Notiz</label><input id="trip-note" type="text" placeholder="Check-in, Buchungsnummer, Aktivität …"></div>';
+    html+='<button class="save-btn" id="trip-save">Etappe speichern</button></div>';
+    html+='<div class="section-title">Eure Route</div>';
+    if(!entries.length) html+='<div class="empty">Noch keine Reiseetappen eingetragen.</div>';
+    else html+='<div class="card">'+entries.map(function(e){
+      var d=new Date(e.date+'T00:00:00'),day=String(d.getDate()).padStart(2,'0'),mon=d.toLocaleDateString('de-DE',{month:'short'}).replace('.','');
+      return '<div class="trip-entry"><div class="trip-date"><b>'+day+'</b><span>'+mon+'</span></div><div class="meta"><div class="desc">'+escapeAttr(e.type)+' · '+escapeAttr(e.title)+'</div><div class="sub">'+escapeAttr(e.place||'')+(e.note?'<br>'+escapeAttr(e.note):'')+'</div></div><button class="del-btn" data-trip-del="'+e.id+'">✕</button></div>';
+    }).join('')+'</div>';
+    return html;
+  }
+
+  var ANIMALS=[
+    ['loewe','Löwe','🦁'],['elefant','Elefant','🐘'],['leopard','Leopard','🐆'],
+    ['bueffel','Büffel','🐃'],['nashorn','Nashorn','🦏'],['giraffe','Giraffe','🦒'],
+    ['zebra','Zebra','🦓'],['oryx','Oryx','🦌'],['hyaene','Hyäne','🐾'],
+    ['hippo','Flusspferd','🦛'],['krokodil','Krokodil','🐊'],['sonstige','Sonstige','📷']
+  ];
+  function renderWildlife(){
+    var entries=state.settings.wildlifeEntries.slice().sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id;});
+    var seen={};entries.forEach(function(e){seen[e.animal]=true;});
+    var big=['loewe','elefant','leopard','bueffel','nashorn'], bigSeen=big.filter(function(x){return seen[x];}).length;
+    var html='<div class="section-title">Safari-Sichtungen</div><div class="trip-hero"><h2>🦁 Big Five</h2><div class="route">'+bigSeen+' von 5 entdeckt</div><div class="progress"><i style="width:'+(bigSeen*20)+'%"></i></div></div>';
+    html+='<div class="card"><div class="wild-grid">';
+    ANIMALS.forEach(function(a){html+='<button class="wild-btn" data-animal="'+a[0]+'"><b>'+a[2]+'</b><span>'+a[1]+(seen[a[0]]?' ✓':'')+'</span></button>';});
+    html+='</div></div>';
+    html+='<div class="section-title">Neue Sichtung</div><div class="card">';
+    html+='<div class="field"><label>Tier</label><select id="wild-animal">'+ANIMALS.map(function(a){return '<option value="'+a[0]+'">'+a[2]+' '+a[1]+'</option>';}).join('')+'</select></div>';
+    html+='<div class="fuel-grid"><div class="field"><label>Datum</label><input id="wild-date" type="date" value="'+todayISO()+'"></div><div class="field"><label>Uhrzeit</label><input id="wild-time" type="time" value="'+new Date().toTimeString().slice(0,5)+'"></div></div>';
+    html+='<div class="field"><label>Ort</label><input id="wild-place" type="text" placeholder="z. B. Chobe National Park"></div>';
+    html+='<div class="field"><label>Anzahl</label><input id="wild-count" type="number" min="1" value="1"></div>';
+    html+='<div class="field"><label>Notiz</label><input id="wild-note" type="text" placeholder="z. B. am Wasserloch"></div>';
+    html+='<div class="receipt-box"><button type="button" class="receipt-btn" id="wild-photo-btn">📷 Foto hinzufügen</button><input id="wild-photo-input" type="file" accept="image/*" capture="environment"><div id="wild-photo-preview"></div></div>';
+    html+='<button class="save-btn" id="wild-save">Sichtung speichern</button></div>';
+    html+='<div class="section-title">Sichtungstagebuch</div>';
+    if(!entries.length) html+='<div class="empty">Noch keine Tiere eingetragen.</div>';
+    else html+='<div class="card">'+entries.map(function(e){var a=ANIMALS.find(function(x){return x[0]===e.animal;})||['','Tier','🐾'];return '<div class="exp-item">'+(e.photo?'<img class="wild-photo" src="'+e.photo+'">':'<div class="stamp sm">'+a[2]+'</div>')+'<div class="meta"><div class="desc">'+a[1]+' · '+e.count+'×</div><div class="sub">'+dayLabel(e.date)+' '+e.time+' · '+escapeAttr(e.place||'Ort nicht angegeben')+(e.note?' · '+escapeAttr(e.note):'')+'</div></div><button class="del-btn" data-wild-del="'+e.id+'">✕</button></div>';}).join('')+'</div>';
+    return html;
+  }
+
+  function renderFuel(){
+    var entries=state.settings.fuelEntries.slice().sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id;});
+    var liters=0,cost=0,dist=0;
+    entries.forEach(function(e){liters+=Number(e.liters)||0;cost+=Number(e.cost)||0;});
+    var asc=entries.slice().sort(function(a,b){return a.odometer-b.odometer;});
+    if(asc.length>1) dist=Math.max(0,Number(asc[asc.length-1].odometer)-Number(asc[0].odometer));
+    var consumption=dist>0?liters/dist*100:0;
+    var html='<div class="section-title">Tankbuch</div><div class="fuel-stat">';
+    html+='<div><b>'+liters.toLocaleString("de-DE",{maximumFractionDigits:1})+' l</b><span>Getankt</span></div>';
+    html+='<div><b>'+cost.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+'</b><span>Gesamtkosten</span></div>';
+    html+='<div><b>'+dist.toLocaleString("de-DE")+' km</b><span>Erfasste Strecke</span></div>';
+    html+='<div><b>'+(consumption?consumption.toLocaleString("de-DE",{maximumFractionDigits:1})+' l':'—')+'</b><span>Ø je 100 km*</span></div></div>';
+    html+='<div class="card"><div class="fuel-grid">';
+    html+='<div class="field"><label>Datum</label><input id="fuel-date" type="date" value="'+todayISO()+'"></div>';
+    html+='<div class="field"><label>Kilometerstand</label><input id="fuel-km" type="number" inputmode="numeric" placeholder="z. B. 45200"></div>';
+    html+='<div class="field"><label>Liter</label><input id="fuel-liters" type="number" inputmode="decimal" step="0.01" placeholder="0,00"></div>';
+    html+='<div class="field"><label>Gesamtkosten</label><input id="fuel-cost" type="number" inputmode="decimal" step="0.01" placeholder="0,00"></div>';
+    html+='<div class="field"><label>Währung</label><select id="fuel-cur">'+CURRENCIES.map(function(c){return '<option>'+c+'</option>';}).join('')+'</select></div>';
+    html+='<div class="field"><label>Ort / Tankstelle</label><input id="fuel-place" type="text" placeholder="optional"></div>';
+    html+='</div><button class="save-btn" id="fuel-save">Tankvorgang speichern</button><div class="hint-box">* Der Durchschnitt ist eine Näherung aus allen erfassten Litern und der Differenz zwischen erstem und letztem Kilometerstand.</div></div>';
+    html+='<div class="section-title">Tankverlauf</div>';
+    if(!entries.length) html+='<div class="empty">Noch kein Tankvorgang erfasst.</div>';
+    else html+='<div class="card">'+entries.map(function(e){
+      return '<div class="exp-item"><div class="stamp sm">⛽</div><div class="meta"><div class="desc">'+escapeAttr(e.place||'Tankstopp')+'</div><div class="sub">'+dayLabel(e.date)+' · '+Number(e.odometer).toLocaleString("de-DE")+' km · '+Number(e.liters).toLocaleString("de-DE",{maximumFractionDigits:2})+' l</div></div><div class="amt">'+fmt(e.cost,e.currency)+'</div><button class="del-btn" data-fuel-del="'+e.id+'">✕</button></div>';
+    }).join('')+'</div>';
+    return html;
+  }
+
+  function renderSettings(){
+    var html='<div class="section-title">Teilnehmer verwalten</div><div class="card">';
+    html+='<div id="participant-list">';
+    PAYERS.forEach(function(p,i){
+      html+='<div class="participant-row"><input type="text" data-participant="'+i+'" value="'+escapeAttr(p)+'"><button type="button" data-remove-participant="'+i+'" '+(PAYERS.length<=2?'disabled style="opacity:.35"':'')+'>✕</button></div>';
+    });
+    html+='</div><button class="tool-btn" id="add-participant" style="width:100%;margin-top:4px">＋ Teilnehmer hinzufügen</button>';
+    html+='<button class="save-btn" id="save-participants">Teilnehmer speichern</button>';
+    html+='<div class="hint-box">Version 2.4 · Daten werden automatisch über Supabase zwischen euren Geräten synchronisiert. Erstelle regelmäßig ein Backup und bewahre es in iCloud Drive auf.</div>';
+    html+='<div class="section-title" style="margin-top:22px">App-Daten</div><button class="tool-btn danger" id="reset-all" style="width:100%">🗑️ Alle App-Daten löschen</button>';
+    html+='<div class="hint-box">Bestehende Ausgaben bleiben erhalten. Wenn du einen Namen änderst, werden bisherige Ausgaben dieses Teilnehmers automatisch auf den neuen Namen übertragen. Für den Ausgleich werden gemeinsame Ausgaben gleichmäßig auf alle Teilnehmer verteilt.</div></div>';
+    return html;
+  }
+
+  // ---------- Nav ----------
+  var TABS = [
+    { key:'dashboard', label:'Übersicht', icon:ICONS.dashboard },
+    { key:'form', label:'Neu', icon:ICONS.plus },
+    { key:'history', label:'Verlauf', icon:ICONS.list },
+    { key:'settlement', label:'Ausgleich', icon:ICONS.scale },
+    { key:'packing', label:'Packliste', icon:ICONS.packing },
+    { key:'checklist', label:'Checkliste', icon:ICONS.checklist },
+    { key:'stats', label:'Statistik', icon:ICONS.stats },
+    { key:'trip', label:'Reise', icon:ICONS.trip },
+    { key:'wildlife', label:'Safari', icon:ICONS.wildlife },
+    { key:'fuel', label:'Tankbuch', icon:ICONS.fuel },
+    { key:'settings', label:'Personen', icon:ICONS.settings }
+  ];
+
+  function renderNav(){
+    return TABS.map(function(t){
+      return '<button data-tab="'+t.key+'" class="'+(state.tab===t.key?'active':'')+'">'+
+        svg(t.icon)+'<span>'+t.label+'</span></button>';
+    }).join('');
+  }
+
+  // ---------- Main render ----------
+  function render(){
+    var main = document.getElementById('main');
+    var nav = document.getElementById('nav');
+    if(!state.loaded){
+      main.innerHTML = '<div class="empty">Lade Reisekasse…</div>';
+      nav.innerHTML = '';
+      return;
+    }
+    var html = '';
+    if(state.tab==='dashboard') html = renderDashboard();
+    else if(state.tab==='form') html = renderForm();
+    else if(state.tab==='history') html = renderHistory();
+    else if(state.tab==='settlement') html = renderSettlement();
+    else if(state.tab==='packing') html = renderPacking();
+    else if(state.tab==='checklist') html = renderChecklist();
+    else if(state.tab==='stats') html = renderStats();
+    else if(state.tab==='trip') html = renderTrip();
+    else if(state.tab==='wildlife') html = renderWildlife();
+    else if(state.tab==='fuel') html = renderFuel();
+    else if(state.tab==='settings') html = renderSettings();
+    main.innerHTML = html;
+    nav.innerHTML = renderNav();
+    main.scrollTop = 0;
+    bindEvents();
+  }
+
+
+  function loadReceipt(file){
+    if(!file) return;
+    if(file.size > 12*1024*1024){ alert('Das Bild ist zu groß. Bitte wähle ein kleineres Foto.'); return; }
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      var img=new Image();
+      img.onload=function(){
+        var max=1400, scale=Math.min(1,max/Math.max(img.width,img.height));
+        var canvas=document.createElement('canvas');
+        canvas.width=Math.round(img.width*scale); canvas.height=Math.round(img.height*scale);
+        canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+        state.form.receipt=canvas.toDataURL('image/jpeg',0.78);
+        render();
+      };
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ---------- Events ----------
+  function bindEvents(){
+    if(state.tab==='packing'){
+      var pa=document.getElementById('pack-add'); if(pa)pa.addEventListener('click',function(){var t=document.getElementById('pack-text').value.trim();if(!t)return;state.settings.packingEntries.push({id:Date.now(),text:t,category:document.getElementById('pack-cat').value,status:'offen'});persistSettings();render();showToast('Eintrag hinzugefügt');});
+      document.querySelectorAll('[data-pack-select]').forEach(function(el){el.addEventListener('change',function(){var x=state.settings.packingEntries.find(function(i){return i.id===Number(el.getAttribute('data-pack-select'));});if(x)x.status=el.value;persistSettings();render();showToast('Status gespeichert');});});
+      document.querySelectorAll('[data-pack-del]').forEach(function(b){b.addEventListener('click',function(){if(confirm('Eintrag löschen?')){var id=Number(b.getAttribute('data-pack-del'));state.settings.packingEntries=state.settings.packingEntries.filter(function(i){return i.id!==id;});persistSettings();render();}});});
+    }
+
+    if(state.tab==='checklist'){
+      var ca=document.getElementById('check-add');if(ca)ca.addEventListener('click',function(){var t=document.getElementById('check-text').value.trim();if(!t)return;state.settings.checklistEntries.push({id:Date.now(),text:t,category:document.getElementById('check-cat').value,done:false});persistSettings();render();showToast('Aufgabe hinzugefügt');});
+      document.querySelectorAll('[data-check-toggle]').forEach(function(b){b.addEventListener('click',function(){var id=Number(b.getAttribute('data-check-toggle')),x=state.settings.checklistEntries.find(function(i){return i.id===id;});if(x)x.done=!x.done;persistSettings();render();});});
+      document.querySelectorAll('[data-check-del]').forEach(function(b){b.addEventListener('click',function(){var id=Number(b.getAttribute('data-check-del'));state.settings.checklistEntries=state.settings.checklistEntries.filter(function(i){return i.id!==id;});persistSettings();render();});});
+    }
+    if(state.tab==='stats'){
+      var csv=document.getElementById('csv-export');if(csv)csv.addEventListener('click',exportCSV);
+      var pr=document.getElementById('print-report');if(pr)pr.addEventListener('click',function(){window.print();});
+    }
+    if(state.tab==='trip'){
+      var ts=document.getElementById('trip-save');
+      if(ts)ts.addEventListener('click',function(){
+        var title=document.getElementById('trip-title').value.trim();
+        if(!title){document.getElementById('trip-title').focus();return;}
+        state.settings.itineraryEntries.push({id:Date.now(),date:document.getElementById('trip-date').value,type:document.getElementById('trip-type').value,title:title,place:document.getElementById('trip-place').value.trim(),note:document.getElementById('trip-note').value.trim()});
+        persistSettings();render();showToast('Etappe gespeichert');
+      });
+      document.querySelectorAll('[data-trip-del]').forEach(function(b){b.addEventListener('click',function(){
+        if(confirm('Diese Reiseetappe löschen?')){var id=Number(b.getAttribute('data-trip-del'));state.settings.itineraryEntries=state.settings.itineraryEntries.filter(function(e){return e.id!==id;});persistSettings();render();}
+      });});
+    }
+    if(state.tab==='wildlife'){
+      var selectedPhoto=null, photoInput=document.getElementById('wild-photo-input'), photoBtn=document.getElementById('wild-photo-btn');
+      document.querySelectorAll('[data-animal]').forEach(function(b){b.addEventListener('click',function(){document.getElementById('wild-animal').value=b.getAttribute('data-animal');document.getElementById('wild-place').scrollIntoView({behavior:'smooth'});});});
+      if(photoBtn&&photoInput) photoBtn.addEventListener('click',function(){photoInput.click();});
+      if(photoInput) photoInput.addEventListener('change',function(){
+        var file=photoInput.files[0];if(!file)return;var r=new FileReader();r.onload=function(ev){var im=new Image();im.onload=function(){var max=1200,sc=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*sc;c.height=im.height*sc;c.getContext('2d').drawImage(im,0,0,c.width,c.height);selectedPhoto=c.toDataURL('image/jpeg',.75);document.getElementById('wild-photo-preview').innerHTML='<img src="'+selectedPhoto+'" style="width:100%;max-height:220px;object-fit:contain;margin-top:10px;border-radius:9px">';};im.src=ev.target.result;};r.readAsDataURL(file);
+      });
+      var ws=document.getElementById('wild-save');if(ws)ws.addEventListener('click',function(){
+        state.settings.wildlifeEntries.push({id:Date.now(),animal:document.getElementById('wild-animal').value,date:document.getElementById('wild-date').value,time:document.getElementById('wild-time').value,place:document.getElementById('wild-place').value.trim(),count:Math.max(1,Number(document.getElementById('wild-count').value)||1),note:document.getElementById('wild-note').value.trim(),photo:selectedPhoto});
+        persistSettings();render();showToast('Sichtung gespeichert');
+      });
+      document.querySelectorAll('[data-wild-del]').forEach(function(b){b.addEventListener('click',function(){if(confirm('Diese Sichtung löschen?')){var id=Number(b.getAttribute('data-wild-del'));state.settings.wildlifeEntries=state.settings.wildlifeEntries.filter(function(e){return e.id!==id;});persistSettings();render();}});});
+    }
+    if(state.tab==='fuel'){
+      var fuelSave=document.getElementById('fuel-save');
+      if(fuelSave) fuelSave.addEventListener('click',function(){
+        var km=Number(document.getElementById('fuel-km').value), liters=Number(document.getElementById('fuel-liters').value), cost=Number(document.getElementById('fuel-cost').value);
+        if(km<=0||liters<=0||cost<0){alert('Bitte Kilometerstand und Liter korrekt eintragen.');return;}
+        state.settings.fuelEntries.push({id:Date.now(),date:document.getElementById('fuel-date').value,odometer:km,liters:liters,cost:cost,currency:document.getElementById('fuel-cur').value,place:document.getElementById('fuel-place').value.trim()});
+        persistSettings();render();showToast('Tankvorgang gespeichert');
+      });
+      document.querySelectorAll('[data-fuel-del]').forEach(function(btn){btn.addEventListener('click',function(){
+        var id=Number(btn.getAttribute('data-fuel-del'));
+        if(confirm('Diesen Tankvorgang löschen?')){state.settings.fuelEntries=state.settings.fuelEntries.filter(function(e){return e.id!==id;});persistSettings();render();}
+      });});
+    }
+    if(state.tab==='settings'){
+      var reset=document.getElementById('reset-all');if(reset)reset.addEventListener('click',resetAllData);
+      var add=document.getElementById('add-participant');
+      if(add) add.addEventListener('click',function(){PAYERS.push('Neue Person');state.settings.payers=PAYERS.slice();render();});
+      document.querySelectorAll('[data-remove-participant]').forEach(function(btn){
+        btn.addEventListener('click',function(){if(PAYERS.length<=2)return;PAYERS.splice(Number(btn.getAttribute('data-remove-participant')),1);state.settings.payers=PAYERS.slice();render();});
+      });
+      var saveP=document.getElementById('save-participants');
+      if(saveP) saveP.addEventListener('click',function(){
+        var old=PAYERS.slice(), names=[];
+        document.querySelectorAll('[data-participant]').forEach(function(el){var n=el.value.trim();if(n)names.push(n);});
+        if(names.length<2){alert('Bitte mindestens zwei Teilnehmer eintragen.');return;}
+        if(new Set(names).size!==names.length){alert('Jeder Teilnehmer braucht einen eindeutigen Namen.');return;}
+        old.forEach(function(o,i){if(names[i]&&o!==names[i])state.expenses.forEach(function(e){if(e.payer===o)e.payer=names[i];});});
+        PAYERS=names;state.settings.payers=names.slice();persist();persistSettings();render();showToast('Teilnehmer gespeichert');
+      });
+    }
+    if(state.tab==='dashboard'){
+      var saveBudgets=document.getElementById('save-budgets');
+      if(saveBudgets) saveBudgets.addEventListener('click',function(){
+        document.querySelectorAll('[data-budget]').forEach(function(el){
+          state.settings.budgets[el.getAttribute('data-budget')]=Math.max(0,Number(el.value)||0);
+        });
+        persistSettings(); render(); showToast('Budgets gespeichert');
+      });
+      var ex=document.getElementById('backup-export');
+      if(ex) ex.addEventListener('click',exportBackup);
+      var im=document.getElementById('backup-import'), fi=document.getElementById('backup-file');
+      if(im&&fi) im.addEventListener('click',function(){fi.click();});
+      if(fi) fi.addEventListener('change',function(){if(fi.files&&fi.files[0]) importBackup(fi.files[0]);});
+    }
+    document.querySelectorAll('#nav button').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        state.tab = btn.getAttribute('data-tab');
+        if(state.tab==='form' && state.editingId===null){
+          state.form = blankForm();
+        }
+        state.pendingDelete = null;
+        render();
+      });
+    });
+
+    if(state.tab==='form'){
+      document.querySelectorAll('[data-cat]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          state.form.category = btn.getAttribute('data-cat');
+          render();
+        });
+      });
+      document.querySelectorAll('[data-cur]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          state.form.currency = btn.getAttribute('data-cur');
+          render();
+        });
+      });
+      document.querySelectorAll('[data-payer]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          state.form.payer = btn.getAttribute('data-payer');
+          render();
+        });
+      });
+      document.querySelectorAll('[data-type]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          state.form.type = btn.getAttribute('data-type');
+          render();
+        });
+      });
+      var descEl = document.getElementById('f-desc');
+      var amtEl = document.getElementById('f-amount');
+      var dateEl = document.getElementById('f-date');
+      if(descEl) descEl.addEventListener('input', function(){ state.form.description = descEl.value; });
+      if(amtEl) amtEl.addEventListener('input', function(){ state.form.amount = amtEl.value; });
+      if(dateEl) dateEl.addEventListener('input', function(){ state.form.date = dateEl.value; });
+      var receiptInput=document.getElementById('receipt-input');
+      var receiptCameraInput=document.getElementById('receipt-camera-input');
+      var receiptLibrary=document.getElementById('receipt-library');
+      var receiptCamera=document.getElementById('receipt-camera');
+      var receiptRemove=document.getElementById('receipt-remove');
+      if(receiptLibrary&&receiptInput) receiptLibrary.addEventListener('click',function(){receiptInput.click();});
+      if(receiptCamera&&receiptCameraInput) receiptCamera.addEventListener('click',function(){receiptCameraInput.click();});
+      if(receiptInput) receiptInput.addEventListener('change',function(){loadReceipt(receiptInput.files[0]);});
+      if(receiptCameraInput) receiptCameraInput.addEventListener('change',function(){loadReceipt(receiptCameraInput.files[0]);});
+      if(receiptRemove) receiptRemove.addEventListener('click',function(){state.form.receipt=null;render();});
+
+      var saveBtn = document.getElementById('f-save');
+      if(saveBtn) saveBtn.addEventListener('click', function(){ saveForm(); });
+      var cancelBtn = document.getElementById('f-cancel');
+      if(cancelBtn) cancelBtn.addEventListener('click', function(){
+        state.editingId = null;
+        state.form = blankForm();
+        state.tab = 'history';
+        render();
+      });
+    }
+
+    if(state.tab==='history'){
+      document.querySelectorAll('[data-fcat]').forEach(function(el){
+        el.addEventListener('click', function(){
+          state.histFilterCat = el.getAttribute('data-fcat');
+          render();
+        });
+      });
+      document.querySelectorAll('[data-fpayer]').forEach(function(el){
+        el.addEventListener('click', function(){
+          state.histFilterPayer = el.getAttribute('data-fpayer');
+          render();
+        });
+      });
+      document.querySelectorAll('[data-ftype]').forEach(function(el){
+        el.addEventListener('click', function(){
+          state.histFilterType = el.getAttribute('data-ftype');
+          render();
+        });
+      });
+      document.querySelectorAll('[data-edit]').forEach(function(el){
+        el.addEventListener('click', function(){
+          var id = Number(el.getAttribute('data-edit'));
+          var exp = state.expenses.find(function(e){return e.id===id;});
+          if(!exp) return;
+          state.editingId = id;
+          state.form = {
+            category: exp.category, description: exp.description, amount: exp.amount,
+            currency: exp.currency, payer: exp.payer, date: exp.date, type: exp.type || 'gemeinsam',
+            receipt: exp.receipt || null
+          };
+          state.tab = 'form';
+          render();
+        });
+      });
+      document.querySelectorAll('[data-del]').forEach(function(el){
+        el.addEventListener('click', function(e){
+          e.stopPropagation();
+          state.pendingDelete = Number(el.getAttribute('data-del'));
+          render();
+        });
+      });
+      document.querySelectorAll('[data-del-yes]').forEach(function(el){
+        el.addEventListener('click', function(e){
+          e.stopPropagation();
+          var id = Number(el.getAttribute('data-del-yes'));
+          state.expenses = state.expenses.filter(function(x){return x.id!==id;});
+          state.pendingDelete = null;
+          persist();
+          render();
+        });
+      });
+      document.querySelectorAll('[data-del-no]').forEach(function(el){
+        el.addEventListener('click', function(e){
+          e.stopPropagation();
+          state.pendingDelete = null;
+          render();
+        });
+      });
+    }
+  }
+
+  function saveForm(){
+    var f = state.form;
+    if(!f.amount || Number(f.amount) <= 0){
+      var amtEl = document.getElementById('f-amount');
+      if(amtEl){ amtEl.style.borderColor = 'var(--red)'; amtEl.focus(); }
+      return;
+    }
+    if(state.editingId !== null){
+      var exp = state.expenses.find(function(e){return e.id===state.editingId;});
+      if(exp){
+        exp.category = f.category; exp.description = f.description; exp.amount = Number(f.amount);
+        exp.currency = f.currency; exp.payer = f.payer; exp.date = f.date; exp.type = f.type; exp.receipt = f.receipt || null;
+      }
+      state.editingId = null;
+    } else {
+      state.expenses.push({
+        id: Date.now(),
+        category: f.category, description: f.description, amount: Number(f.amount),
+        currency: f.currency, payer: f.payer, date: f.date, type: f.type, receipt: f.receipt || null
+      });
+    }
+    persist();
+    state.form = blankForm();
+    state.tab = 'history';
+    render();
+  }
+
+  render();
+  loadExpenses();
+})();
+</script>
+
+<style id="ios-main-nav-slider-final">
+/* iPhone-Fix: die tatsächlich erzeugte untere Hauptnavigation */
+#bottom-nav,
+.bottom-nav{
+  position:fixed!important;
+  z-index:9999!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  width:100vw!important;
+  max-width:100vw!important;
+  display:flex!important;
+  grid-template-columns:none!important;
+  flex-flow:row nowrap!important;
+  justify-content:flex-start!important;
+  align-items:stretch!important;
+  column-gap:4px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-x!important;
+  scroll-behavior:smooth;
+  padding:7px 10px calc(7px + env(safe-area-inset-bottom))!important;
+  box-sizing:border-box!important;
+}
+#bottom-nav::-webkit-scrollbar,
+.bottom-nav::-webkit-scrollbar{display:none!important}
+#bottom-nav > *,
+.bottom-nav > *{
+  flex:0 0 82px!important;
+  width:82px!important;
+  min-width:82px!important;
+  max-width:82px!important;
+}
+#bottom-nav .nav-item,
+.bottom-nav .nav-item{
+  flex:0 0 82px!important;
+  width:82px!important;
+  min-width:82px!important;
+  max-width:82px!important;
+  padding:6px 2px!important;
+}
+#bottom-nav .nav-label,
+.bottom-nav .nav-label{
+  font-size:9px!important;
+  white-space:nowrap!important;
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  var nav=document.querySelector('.bottom-nav')||document.getElementById('bottom-nav');
+  if(!nav)return;
+  nav.style.setProperty('display','flex','important');
+  nav.style.setProperty('overflow-x','auto','important');
+  nav.style.setProperty('justify-content','flex-start','important');
+  nav.style.setProperty('-webkit-overflow-scrolling','touch','important');
+  nav.addEventListener('wheel',function(e){
+    if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){nav.scrollLeft+=e.deltaY;e.preventDefault();}
+  },{passive:false});
+});
+</script>
+
+
+<style id="real-nav-scroll-fix">
+/* Echte Menüleiste der App: <nav id="nav"> */
+#nav{
+  position:fixed!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  z-index:99999!important;
+  width:100%!important;
+  max-width:100%!important;
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  justify-content:flex-start!important;
+  align-items:stretch!important;
+  gap:0!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-x!important;
+  overscroll-behavior-x:contain;
+  scrollbar-width:none!important;
+  padding:6px 8px calc(6px + env(safe-area-inset-bottom))!important;
+  box-sizing:border-box!important;
+  background:rgba(255,250,240,.96)!important;
+  border-top:1px solid rgba(115,82,48,.18)!important;
+}
+#nav::-webkit-scrollbar{display:none!important}
+#nav > button{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  flex:0 0 82px!important;
+  width:82px!important;
+  min-width:82px!important;
+  max-width:82px!important;
+  height:58px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:3px!important;
+  border:0!important;
+  background:transparent!important;
+  color:#756453!important;
+  padding:4px 2px!important;
+  margin:0!important;
+  white-space:nowrap!important;
+}
+#nav > button svg{
+  width:21px!important;
+  height:21px!important;
+  flex:none!important;
+}
+#nav > button span{
+  display:block!important;
+  font-size:9px!important;
+  line-height:1.1!important;
+  white-space:nowrap!important;
+}
+#nav > button.active{
+  color:#b96d23!important;
+  background:rgba(217,139,50,.12)!important;
+  border-radius:10px!important;
+}
+#nav:after{
+  content:"";
+  flex:0 0 12px!important;
+  width:12px!important;
+}
+</style>
+<script>
+(function(){
+  function keepActiveVisible(){
+    var nav=document.getElementById('nav');
+    if(!nav)return;
+    var active=nav.querySelector('button.active');
+    if(active) active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  }
+  document.addEventListener('click',function(e){
+    if(e.target.closest && e.target.closest('#nav button')) setTimeout(keepActiveVisible,50);
+  });
+})();
+</script>
+
+</body>
+</html>
