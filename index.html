@@ -545,7 +545,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   <header>
     <div class="eyebrow">Reisekasse</div>
     <h1>Namibia <em>&</em> Botswana</h1>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Build 2026-07-12-D (mit echten Supabase-Daten)</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Build 2026-07-12-E (Reisezeitraum editierbar)</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -1136,6 +1136,9 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   function renderTrip(){
     var entries=state.settings.itineraryEntries.slice().sort(function(a,b){return a.date.localeCompare(b.date)||a.id-b.id;});
     var html='<div class="section-title">Reiseplan</div><div class="trip-hero"><h2>🗺️ Namibia & Botswana</h2><div class="route">'+dayLabel(state.settings.tripStart)+' bis '+dayLabel(state.settings.tripEnd)+'</div></div>';
+    html+='<div class="section-title">Reisezeitraum</div><div class="card">';
+    html+='<div class="fuel-grid"><div class="field"><label>Von</label><input id="trip-range-start" type="date" value="'+state.settings.tripStart+'"></div><div class="field"><label>Bis</label><input id="trip-range-end" type="date" value="'+state.settings.tripEnd+'"></div></div>';
+    html+='<button class="save-btn" id="trip-range-save">Reisezeitraum speichern</button></div>';
     html+='<div class="section-title">Etappe hinzufügen</div><div class="card">';
     html+='<div class="fuel-grid"><div class="field"><label>Datum</label><input id="trip-date" type="date" value="'+state.settings.tripStart+'"></div><div class="field"><label>Art</label><select id="trip-type"><option>🏨 Lodge</option><option>🏕️ Camping</option><option>🚙 Fahrt</option><option>🦁 Aktivität</option><option>✈️ Flug</option><option>📍 Sonstiges</option></select></div></div>';
     html+='<div class="field"><label>Titel</label><input id="trip-title" type="text" placeholder="z. B. Sunbirds Lodge Chobe"></div>';
@@ -1313,6 +1316,16 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       var pr=document.getElementById('print-report');if(pr)pr.addEventListener('click',function(){window.print();});
     }
     if(state.tab==='trip'){
+      var trs=document.getElementById('trip-range-save');
+      if(trs)trs.addEventListener('click',function(){
+        var startEl=document.getElementById('trip-range-start'), endEl=document.getElementById('trip-range-end');
+        var startVal=startEl.value, endVal=endEl.value;
+        if(!startVal||!endVal){ showToast('Bitte beide Daten ausfüllen'); return; }
+        if(endVal < startVal){ showToast('Enddatum liegt vor dem Startdatum'); endEl.style.borderColor='var(--red)'; return; }
+        state.settings.tripStart = startVal;
+        state.settings.tripEnd = endVal;
+        persistSettings();render();showToast('Reisezeitraum gespeichert');
+      });
       var ts=document.getElementById('trip-save');
       if(ts)ts.addEventListener('click',function(){
         var title=document.getElementById('trip-title').value.trim();
