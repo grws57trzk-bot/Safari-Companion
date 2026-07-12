@@ -277,6 +277,11 @@
     backdrop-filter:blur(14px);
     border-top:1px solid var(--border);
     padding:8px 6px calc(10px + env(safe-area-inset-bottom));
+    transition:transform .32s cubic-bezier(.4,0,.2,1), opacity .32s ease;
+    z-index:20;
+  }
+  nav.nav-hidden{
+    transform:translateY(100%);
   }
   nav button{
     flex:1;background:none;border:none;color:var(--sand-dim);
@@ -285,6 +290,34 @@
   }
   nav button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;}
   nav button.active{color:var(--gold);}
+
+  #nav-handle{
+    position:absolute;left:0;right:0;bottom:0;
+    height:26px;
+    display:flex;align-items:flex-end;justify-content:center;
+    padding-bottom:6px;
+    z-index:19;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #nav-handle i{
+    display:block;width:40px;height:5px;border-radius:3px;
+    background:var(--gold-dim);opacity:.55;
+    transition:opacity .25s ease;
+  }
+  nav:not(.nav-hidden) ~ #nav-handle{opacity:0;pointer-events:none;}
+
+  #fab-add{
+    position:absolute;right:16px;bottom:calc(78px + env(safe-area-inset-bottom));
+    width:52px;height:52px;border-radius:50%;
+    background:var(--gold);color:var(--bg);border:none;
+    font-family:'Fraunces',serif;font-size:28px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 18px rgba(0,0,0,.4);
+    z-index:21;
+    transition:transform .2s ease, bottom .32s cubic-bezier(.4,0,.2,1);
+  }
+  #fab-add:active{transform:scale(.92);}
+  nav.nav-hidden ~ #fab-add{bottom:calc(24px + env(safe-area-inset-bottom));}
 
   /* Reise-Cockpit, Budget & Datensicherung */
   .trip-hero{background:linear-gradient(135deg,rgba(201,154,70,.18),rgba(168,84,46,.12));border:1px solid var(--border-strong);border-radius:18px;padding:18px;margin-bottom:12px}
@@ -551,10 +584,12 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   <header>
     <div class="eyebrow">Reisekasse</div>
     <h1 id="app-title">Namibia <em>&</em> Botswana</h1>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Build 2026-07-12-H (Sichtungsfotos löschbar)</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Build 2026-07-12-I (Packliste pro Person, Dock-Leiste, Schnell-Hinzufügen)</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
+  <div id="nav-handle" title="Menü einblenden"><i></i></div>
+  <button id="fab-add" title="Neuer Eintrag">+</button>
 </div>
 
 <script>
@@ -724,6 +759,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     histFilterCat: 'all',
     histFilterPayer: 'all',
     histFilterType: 'all',
+    packFilterPerson: 'alle',
     pendingDelete: null,
     storageMode: 'local',
     settings: {
@@ -789,7 +825,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       if(!Array.isArray(state.settings.wildlifeEntries)) state.settings.wildlifeEntries=[];
       if(!Array.isArray(state.settings.itineraryEntries)) state.settings.itineraryEntries=[];
       if(!Array.isArray(state.settings.checklistEntries)) state.settings.checklistEntries=[];
-      if(!Array.isArray(state.settings.packingEntries) || !state.settings.packingEntries.length) state.settings.packingEntries=[{"id": 210000, "category": "Dokumente", "text": "Reisepass (mind. 6 Monate gültig, mind. 2 leere Seiten)", "status": "offen"}, {"id": 210001, "category": "Dokumente", "text": "Nationaler Führerschein + Internationaler Führerschein", "status": "offen"}, {"id": 210002, "category": "Dokumente", "text": "Kreditkarten (mind. 2)", "status": "offen"}, {"id": 210003, "category": "Dokumente", "text": "Bargeld USD sowie NAD/BWP", "status": "offen"}, {"id": 210004, "category": "Dokumente", "text": "Auslandskranken- und Rückholversicherung", "status": "offen"}, {"id": 210005, "category": "Dokumente", "text": "Mietwagenvertrag inkl. Notfallnummer", "status": "offen"}, {"id": 210006, "category": "Dokumente", "text": "Buchungsbestätigungen", "status": "offen"}, {"id": 210007, "category": "Dokumente", "text": "Flugtickets", "status": "offen"}, {"id": 210008, "category": "Dokumente", "text": "Impfpass", "status": "offen"}, {"id": 210009, "category": "Dokumente", "text": "Passfotos", "status": "offen"}, {"id": 210010, "category": "Dokumente", "text": "Kopien wichtiger Dokumente – Papier + Cloud", "status": "offen"}, {"id": 210011, "category": "Dokumente", "text": "Kontakte der deutschen Botschaften", "status": "offen"}, {"id": 210012, "category": "Reisemedizin", "text": "Malariaprophylaxe nach ärztlicher Rücksprache", "status": "offen"}, {"id": 210013, "category": "Reisemedizin", "text": "Mückenschutz mit hohem DEET-Anteil", "status": "offen"}, {"id": 210014, "category": "Reisemedizin", "text": "Moskitonetz", "status": "offen"}, {"id": 210015, "category": "Reisemedizin", "text": "Persönliche Medikamente + Rezeptkopie", "status": "offen"}, {"id": 210016, "category": "Reisemedizin", "text": "Schmerz-/Fiebermittel", "status": "offen"}, {"id": 210017, "category": "Reisemedizin", "text": "Durchfallmittel + Elektrolyte", "status": "offen"}, {"id": 210018, "category": "Reisemedizin", "text": "Mittel gegen Übelkeit", "status": "offen"}, {"id": 210019, "category": "Reisemedizin", "text": "Antihistaminikum", "status": "offen"}, {"id": 210020, "category": "Reisemedizin", "text": "Pflaster und Verbandsmaterial", "status": "offen"}, {"id": 210021, "category": "Reisemedizin", "text": "Desinfektionsmittel", "status": "offen"}, {"id": 210022, "category": "Reisemedizin", "text": "Pinzette, Schere, Zeckenzange", "status": "offen"}, {"id": 210023, "category": "Reisemedizin", "text": "Fieberthermometer", "status": "offen"}, {"id": 210024, "category": "Reisemedizin", "text": "Sonnencreme + Lippenpflege mit LSF", "status": "offen"}, {"id": 210025, "category": "Reisemedizin", "text": "Aftersun", "status": "offen"}, {"id": 210026, "category": "Reisemedizin", "text": "Desinfektionsgel", "status": "offen"}, {"id": 210027, "category": "Kleidung", "text": "Zwiebellook, atmungsaktiv und schnelltrocknend", "status": "offen"}, {"id": 210028, "category": "Kleidung", "text": "Neutrale Farben: khaki, oliv, braun", "status": "offen"}, {"id": 210029, "category": "Kleidung", "text": "Lange Hosen und Langarmshirts", "status": "offen"}, {"id": 210030, "category": "Kleidung", "text": "T-Shirts und kurze Hosen", "status": "offen"}, {"id": 210031, "category": "Kleidung", "text": "Fleecejacke/Softshell", "status": "offen"}, {"id": 210032, "category": "Kleidung", "text": "Leichte Regenjacke", "status": "offen"}, {"id": 210033, "category": "Kleidung", "text": "Mütze und Handschuhe", "status": "offen"}, {"id": 210034, "category": "Kleidung", "text": "Geschlossene Schuhe/Wanderschuhe", "status": "offen"}, {"id": 210035, "category": "Kleidung", "text": "Sandalen", "status": "offen"}, {"id": 210036, "category": "Kleidung", "text": "Hut/Cap + Sonnenbrille", "status": "offen"}, {"id": 210037, "category": "Kleidung", "text": "Buff/Halstuch", "status": "offen"}, {"id": 210038, "category": "Kleidung", "text": "Badesachen", "status": "offen"}, {"id": 210039, "category": "Kleidung", "text": "Unterwäsche und Socken", "status": "offen"}, {"id": 210040, "category": "Auto", "text": "Werkzeugset", "status": "offen"}, {"id": 210041, "category": "Auto", "text": "2 Ersatzreifen + Reifenpannenset", "status": "offen"}, {"id": 210042, "category": "Auto", "text": "Kompressor + Luftdruckmesser", "status": "offen"}, {"id": 210043, "category": "Auto", "text": "Wagenheber + Radmutternschlüssel testen", "status": "offen"}, {"id": 210044, "category": "Auto", "text": "Abschleppseil", "status": "offen"}, {"id": 210045, "category": "Auto", "text": "Starterkabel", "status": "offen"}, {"id": 210046, "category": "Auto", "text": "Ersatzsicherungen und Glühbirnen", "status": "offen"}, {"id": 210047, "category": "Auto", "text": "Panzertape/Kabelbinder", "status": "offen"}, {"id": 210048, "category": "Auto", "text": "Erste-Hilfe-Kasten", "status": "offen"}, {"id": 210049, "category": "Auto", "text": "Warndreieck + Warnweste", "status": "offen"}, {"id": 210050, "category": "Auto", "text": "Sandbleche", "status": "offen"}, {"id": 210051, "category": "Auto", "text": "Sprit- und Wasserkanister", "status": "offen"}, {"id": 210052, "category": "Auto", "text": "Motoröl + Kühlwasser", "status": "offen"}, {"id": 210053, "category": "Auto", "text": "Arbeitshandschuhe", "status": "offen"}, {"id": 210054, "category": "Auto", "text": "Plane/Persenning", "status": "offen"}, {"id": 210055, "category": "Auto", "text": "GPS/Offline-Karten", "status": "offen"}, {"id": 210056, "category": "Auto", "text": "Satellitentelefon/Notfunkgerät", "status": "offen"}, {"id": 210057, "category": "Auto", "text": "Stirnlampe + Batterien", "status": "offen"}, {"id": 210058, "category": "Auto", "text": "Powerbank + Autoladekabel", "status": "offen"}, {"id": 210059, "category": "Sonstiges", "text": "Fernglas", "status": "offen"}, {"id": 210060, "category": "Sonstiges", "text": "Kamera + Akkus/Speicherkarten", "status": "offen"}, {"id": 210061, "category": "Sonstiges", "text": "Steckdosenadapter Typ D/M", "status": "offen"}, {"id": 210062, "category": "Sonstiges", "text": "Kühlbox", "status": "offen"}, {"id": 210063, "category": "Sonstiges", "text": "Wasserfilter/Reinigungstabletten", "status": "offen"}, {"id": 210064, "category": "Sonstiges", "text": "Insektenspray", "status": "offen"}, {"id": 210065, "category": "Sonstiges", "text": "Schlafsack/Decke", "status": "offen"}, {"id": 210066, "category": "Sonstiges", "text": "Müllbeutel", "status": "offen"}, {"id": 210067, "category": "Sonstiges", "text": "Multitool", "status": "offen"}, {"id": 210068, "category": "Sonstiges", "text": "Feuchttücher + Toilettenpapier", "status": "offen"}];
+      if(!Array.isArray(state.settings.packingEntries) || !state.settings.packingEntries.length) state.settings.packingEntries=[{"id": 210000, "category": "Dokumente", "text": "Reisepass (mind. 6 Monate gültig, mind. 2 leere Seiten)", "status": "offen", "person": "Gemeinsam"}, {"id": 210001, "category": "Dokumente", "text": "Nationaler Führerschein + Internationaler Führerschein", "status": "offen", "person": "Gemeinsam"}, {"id": 210002, "category": "Dokumente", "text": "Kreditkarten (mind. 2)", "status": "offen", "person": "Gemeinsam"}, {"id": 210003, "category": "Dokumente", "text": "Bargeld USD sowie NAD/BWP", "status": "offen", "person": "Gemeinsam"}, {"id": 210004, "category": "Dokumente", "text": "Auslandskranken- und Rückholversicherung", "status": "offen", "person": "Gemeinsam"}, {"id": 210005, "category": "Dokumente", "text": "Mietwagenvertrag inkl. Notfallnummer", "status": "offen", "person": "Gemeinsam"}, {"id": 210006, "category": "Dokumente", "text": "Buchungsbestätigungen", "status": "offen", "person": "Gemeinsam"}, {"id": 210007, "category": "Dokumente", "text": "Flugtickets", "status": "offen", "person": "Gemeinsam"}, {"id": 210008, "category": "Dokumente", "text": "Impfpass", "status": "offen", "person": "Gemeinsam"}, {"id": 210009, "category": "Dokumente", "text": "Passfotos", "status": "offen", "person": "Gemeinsam"}, {"id": 210010, "category": "Dokumente", "text": "Kopien wichtiger Dokumente – Papier + Cloud", "status": "offen", "person": "Gemeinsam"}, {"id": 210011, "category": "Dokumente", "text": "Kontakte der deutschen Botschaften", "status": "offen", "person": "Gemeinsam"}, {"id": 210012, "category": "Reisemedizin", "text": "Malariaprophylaxe nach ärztlicher Rücksprache", "status": "offen", "person": "Gemeinsam"}, {"id": 210013, "category": "Reisemedizin", "text": "Mückenschutz mit hohem DEET-Anteil", "status": "offen", "person": "Gemeinsam"}, {"id": 210014, "category": "Reisemedizin", "text": "Moskitonetz", "status": "offen", "person": "Gemeinsam"}, {"id": 210015, "category": "Reisemedizin", "text": "Persönliche Medikamente + Rezeptkopie", "status": "offen", "person": "Gemeinsam"}, {"id": 210016, "category": "Reisemedizin", "text": "Schmerz-/Fiebermittel", "status": "offen", "person": "Gemeinsam"}, {"id": 210017, "category": "Reisemedizin", "text": "Durchfallmittel + Elektrolyte", "status": "offen", "person": "Gemeinsam"}, {"id": 210018, "category": "Reisemedizin", "text": "Mittel gegen Übelkeit", "status": "offen", "person": "Gemeinsam"}, {"id": 210019, "category": "Reisemedizin", "text": "Antihistaminikum", "status": "offen", "person": "Gemeinsam"}, {"id": 210020, "category": "Reisemedizin", "text": "Pflaster und Verbandsmaterial", "status": "offen", "person": "Gemeinsam"}, {"id": 210021, "category": "Reisemedizin", "text": "Desinfektionsmittel", "status": "offen", "person": "Gemeinsam"}, {"id": 210022, "category": "Reisemedizin", "text": "Pinzette, Schere, Zeckenzange", "status": "offen", "person": "Gemeinsam"}, {"id": 210023, "category": "Reisemedizin", "text": "Fieberthermometer", "status": "offen", "person": "Gemeinsam"}, {"id": 210024, "category": "Reisemedizin", "text": "Sonnencreme + Lippenpflege mit LSF", "status": "offen", "person": "Gemeinsam"}, {"id": 210025, "category": "Reisemedizin", "text": "Aftersun", "status": "offen", "person": "Gemeinsam"}, {"id": 210026, "category": "Reisemedizin", "text": "Desinfektionsgel", "status": "offen", "person": "Gemeinsam"}, {"id": 210027, "category": "Kleidung", "text": "Zwiebellook, atmungsaktiv und schnelltrocknend", "status": "offen", "person": "Gemeinsam"}, {"id": 210028, "category": "Kleidung", "text": "Neutrale Farben: khaki, oliv, braun", "status": "offen", "person": "Gemeinsam"}, {"id": 210029, "category": "Kleidung", "text": "Lange Hosen und Langarmshirts", "status": "offen", "person": "Gemeinsam"}, {"id": 210030, "category": "Kleidung", "text": "T-Shirts und kurze Hosen", "status": "offen", "person": "Gemeinsam"}, {"id": 210031, "category": "Kleidung", "text": "Fleecejacke/Softshell", "status": "offen", "person": "Gemeinsam"}, {"id": 210032, "category": "Kleidung", "text": "Leichte Regenjacke", "status": "offen", "person": "Gemeinsam"}, {"id": 210033, "category": "Kleidung", "text": "Mütze und Handschuhe", "status": "offen", "person": "Gemeinsam"}, {"id": 210034, "category": "Kleidung", "text": "Geschlossene Schuhe/Wanderschuhe", "status": "offen", "person": "Gemeinsam"}, {"id": 210035, "category": "Kleidung", "text": "Sandalen", "status": "offen", "person": "Gemeinsam"}, {"id": 210036, "category": "Kleidung", "text": "Hut/Cap + Sonnenbrille", "status": "offen", "person": "Gemeinsam"}, {"id": 210037, "category": "Kleidung", "text": "Buff/Halstuch", "status": "offen", "person": "Gemeinsam"}, {"id": 210038, "category": "Kleidung", "text": "Badesachen", "status": "offen", "person": "Gemeinsam"}, {"id": 210039, "category": "Kleidung", "text": "Unterwäsche und Socken", "status": "offen", "person": "Gemeinsam"}, {"id": 210040, "category": "Auto", "text": "Werkzeugset", "status": "offen", "person": "Gemeinsam"}, {"id": 210041, "category": "Auto", "text": "2 Ersatzreifen + Reifenpannenset", "status": "offen", "person": "Gemeinsam"}, {"id": 210042, "category": "Auto", "text": "Kompressor + Luftdruckmesser", "status": "offen", "person": "Gemeinsam"}, {"id": 210043, "category": "Auto", "text": "Wagenheber + Radmutternschlüssel testen", "status": "offen", "person": "Gemeinsam"}, {"id": 210044, "category": "Auto", "text": "Abschleppseil", "status": "offen", "person": "Gemeinsam"}, {"id": 210045, "category": "Auto", "text": "Starterkabel", "status": "offen", "person": "Gemeinsam"}, {"id": 210046, "category": "Auto", "text": "Ersatzsicherungen und Glühbirnen", "status": "offen", "person": "Gemeinsam"}, {"id": 210047, "category": "Auto", "text": "Panzertape/Kabelbinder", "status": "offen", "person": "Gemeinsam"}, {"id": 210048, "category": "Auto", "text": "Erste-Hilfe-Kasten", "status": "offen", "person": "Gemeinsam"}, {"id": 210049, "category": "Auto", "text": "Warndreieck + Warnweste", "status": "offen", "person": "Gemeinsam"}, {"id": 210050, "category": "Auto", "text": "Sandbleche", "status": "offen", "person": "Gemeinsam"}, {"id": 210051, "category": "Auto", "text": "Sprit- und Wasserkanister", "status": "offen", "person": "Gemeinsam"}, {"id": 210052, "category": "Auto", "text": "Motoröl + Kühlwasser", "status": "offen", "person": "Gemeinsam"}, {"id": 210053, "category": "Auto", "text": "Arbeitshandschuhe", "status": "offen", "person": "Gemeinsam"}, {"id": 210054, "category": "Auto", "text": "Plane/Persenning", "status": "offen", "person": "Gemeinsam"}, {"id": 210055, "category": "Auto", "text": "GPS/Offline-Karten", "status": "offen", "person": "Gemeinsam"}, {"id": 210056, "category": "Auto", "text": "Satellitentelefon/Notfunkgerät", "status": "offen", "person": "Gemeinsam"}, {"id": 210057, "category": "Auto", "text": "Stirnlampe + Batterien", "status": "offen", "person": "Gemeinsam"}, {"id": 210058, "category": "Auto", "text": "Powerbank + Autoladekabel", "status": "offen", "person": "Gemeinsam"}, {"id": 210059, "category": "Sonstiges", "text": "Fernglas", "status": "offen", "person": "Gemeinsam"}, {"id": 210060, "category": "Sonstiges", "text": "Kamera + Akkus/Speicherkarten", "status": "offen", "person": "Gemeinsam"}, {"id": 210061, "category": "Sonstiges", "text": "Steckdosenadapter Typ D/M", "status": "offen", "person": "Gemeinsam"}, {"id": 210062, "category": "Sonstiges", "text": "Kühlbox", "status": "offen", "person": "Gemeinsam"}, {"id": 210063, "category": "Sonstiges", "text": "Wasserfilter/Reinigungstabletten", "status": "offen", "person": "Gemeinsam"}, {"id": 210064, "category": "Sonstiges", "text": "Insektenspray", "status": "offen", "person": "Gemeinsam"}, {"id": 210065, "category": "Sonstiges", "text": "Schlafsack/Decke", "status": "offen", "person": "Gemeinsam"}, {"id": 210066, "category": "Sonstiges", "text": "Müllbeutel", "status": "offen", "person": "Gemeinsam"}, {"id": 210067, "category": "Sonstiges", "text": "Multitool", "status": "offen", "person": "Gemeinsam"}, {"id": 210068, "category": "Sonstiges", "text": "Feuchttücher + Toilettenpapier", "status": "offen", "person": "Gemeinsam"}];
       PAYERS = state.settings.payers.slice();
     }catch(e){}
     state.loaded = true;
@@ -1102,15 +1138,28 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
 
 
   function renderPacking(){
-    var items=state.settings.packingEntries, done=items.filter(function(x){return x.status==='gepackt';}).length, localBuy=items.filter(function(x){return x.status==='vorort';}).length;
-    var html='<div class="section-title">Safari-Packliste</div><div class="trip-hero"><h2>🎒 Packliste</h2><div class="route">'+done+' von '+items.length+' gepackt</div><div class="progress"><i style="width:'+(items.length?Math.round(done/items.length*100):0)+'%"></i></div></div>';
-    html+='<div class="card"><div class="field"><label>Neuer Eintrag</label><input id="pack-text" placeholder="Gegenstand hinzufügen"></div><div class="field"><label>Kategorie</label><select id="pack-cat"><option>Dokumente</option><option>Reisemedizin</option><option>Kleidung</option><option>Auto</option><option>Sonstiges</option></select></div><button class="save-btn" id="pack-add">Hinzufügen</button></div>';
+    var allItems=state.settings.packingEntries;
+    allItems.forEach(function(x){ if(!x.person) x.person='Gemeinsam'; });
+    var people=['Gemeinsam'].concat(PAYERS);
+    var filter=state.packFilterPerson||'alle';
+    var items = filter==='alle' ? allItems : allItems.filter(function(x){return x.person===filter;});
+    var done=items.filter(function(x){return x.status==='gepackt';}).length;
+    var html='<div class="section-title">Safari-Packliste</div><div class="trip-hero"><h2>🎒 Packliste</h2><div class="route">'+done+' von '+items.length+' gepackt'+(filter!=='alle'?' · '+escapeAttr(filter):'')+'</div><div class="progress"><i style="width:'+(items.length?Math.round(done/items.length*100):0)+'%"></i></div></div>';
+    html+='<div class="section-title">Liste</div><div class="filters">';
+    html+='<span class="chip'+(filter==='alle'?' active':'')+'" data-pack-filter="alle">Alle</span>';
+    people.forEach(function(p){html+='<span class="chip'+(filter===p?' active':'')+'" data-pack-filter="'+escapeAttr(p)+'">'+escapeAttr(p)+'</span>';});
+    html+='</div>';
+    html+='<div class="card"><div class="field"><label>Neuer Eintrag</label><input id="pack-text" placeholder="Gegenstand hinzufügen"></div>';
+    html+='<div class="fuel-grid"><div class="field"><label>Kategorie</label><select id="pack-cat"><option>Dokumente</option><option>Reisemedizin</option><option>Kleidung</option><option>Auto</option><option>Sonstiges</option></select></div><div class="field"><label>Für</label><select id="pack-person">'+people.map(function(p){return '<option value="'+escapeAttr(p)+'" '+(filter===p?'selected':'')+'>'+escapeAttr(p)+'</option>';}).join('')+'</select></div></div>';
+    html+='<button class="save-btn" id="pack-add">Hinzufügen</button></div>';
     ['Dokumente','Reisemedizin','Kleidung','Auto','Sonstiges'].forEach(function(cat){
       var list=items.filter(function(x){return x.category===cat;}); if(!list.length)return;
       html+='<div class="section-title">'+cat+'</div><div class="card">';
-      list.forEach(function(x){html+='<div class="check-row '+(x.status==='gepackt'?'done':'')+'"><div class="check-text">'+escapeAttr(x.text)+'<div style="margin-top:7px"><select data-pack-select="'+x.id+'" style="width:100%;min-height:40px"><option value="offen" '+(x.status==='offen'?'selected':'')+'>○ Offen</option><option value="besorgt" '+(x.status==='besorgt'?'selected':'')+'>🛍️ Besorgt</option><option value="vorort" '+(x.status==='vorort'?'selected':'')+'>📍 Wird vor Ort gekauft</option><option value="gepackt" '+(x.status==='gepackt'?'selected':'')+'>✅ Gepackt</option></select></div></div><button class="del-btn" data-pack-del="'+x.id+'">✕</button></div>';});
+      list.forEach(function(x){html+='<div class="check-row '+(x.status==='gepackt'?'done':'')+'"><div class="check-text">'+escapeAttr(x.text)+(filter==='alle'?' <span style="color:var(--gold-dim);font-size:11px">· '+escapeAttr(x.person)+'</span>':'')+'<div style="margin-top:7px"><select data-pack-select="'+x.id+'" style="width:100%;min-height:40px"><option value="offen" '+(x.status==='offen'?'selected':'')+'>○ Offen</option><option value="besorgt" '+(x.status==='besorgt'?'selected':'')+'>🛍️ Besorgt</option><option value="vorort" '+(x.status==='vorort'?'selected':'')+'>📍 Wird vor Ort gekauft</option><option value="gepackt" '+(x.status==='gepackt'?'selected':'')+'>✅ Gepackt</option></select></div></div><button class="del-btn" data-pack-del="'+x.id+'">✕</button></div>';});
       html+='</div>';
-    }); return html;
+    });
+    if(!items.length) html+='<div class="empty">Noch keine Einträge'+(filter!=='alle'?' für '+escapeAttr(filter):'')+'.</div>';
+    return html;
   }
 
   function renderChecklist(){
@@ -1326,7 +1375,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   // ---------- Events ----------
   function bindEvents(){
     if(state.tab==='packing'){
-      var pa=document.getElementById('pack-add'); if(pa)pa.addEventListener('click',function(){var t=document.getElementById('pack-text').value.trim();if(!t)return;state.settings.packingEntries.push({id:Date.now(),text:t,category:document.getElementById('pack-cat').value,status:'offen'});persistSettings();render();showToast('Eintrag hinzugefügt');});
+      document.querySelectorAll('[data-pack-filter]').forEach(function(el){el.addEventListener('click',function(){state.packFilterPerson=el.getAttribute('data-pack-filter');render();});});
+      var pa=document.getElementById('pack-add'); if(pa)pa.addEventListener('click',function(){var t=document.getElementById('pack-text').value.trim();if(!t)return;var personEl=document.getElementById('pack-person');state.settings.packingEntries.push({id:Date.now(),text:t,category:document.getElementById('pack-cat').value,status:'offen',person:personEl?personEl.value:'Gemeinsam'});persistSettings();render();showToast('Eintrag hinzugefügt');});
       document.querySelectorAll('[data-pack-select]').forEach(function(el){el.addEventListener('change',function(){var x=state.settings.packingEntries.find(function(i){return i.id===Number(el.getAttribute('data-pack-select'));});if(x)x.status=el.value;persistSettings();render();showToast('Status gespeichert');});});
       document.querySelectorAll('[data-pack-del]').forEach(function(b){b.addEventListener('click',function(){if(confirm('Eintrag löschen?')){var id=Number(b.getAttribute('data-pack-del'));state.settings.packingEntries=state.settings.packingEntries.filter(function(i){return i.id!==id;});persistSettings();render();}});});
     }
@@ -1447,6 +1497,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         }
         state.pendingDelete = null;
         render();
+        scheduleNavHide();
       });
     });
 
@@ -1590,6 +1641,62 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     state.tab = 'history';
     render();
   }
+
+  // ---------- Dock-Verhalten der Navigationsleiste (blendet bei Inaktivität aus) ----------
+  var navHideTimer = null;
+  function showNav(){
+    var n = document.getElementById('nav');
+    if(n) n.classList.remove('nav-hidden');
+    scheduleNavHide();
+  }
+  function scheduleNavHide(){
+    clearTimeout(navHideTimer);
+    navHideTimer = setTimeout(function(){
+      var n = document.getElementById('nav');
+      if(n) n.classList.add('nav-hidden');
+    }, 3200);
+  }
+  (function initDock(){
+    var mainEl = document.getElementById('main');
+    var handle = document.getElementById('nav-handle');
+    var fab = document.getElementById('fab-add');
+    if(mainEl){
+      mainEl.addEventListener('touchstart', showNav, {passive:true});
+      mainEl.addEventListener('scroll', showNav, {passive:true});
+      mainEl.addEventListener('click', showNav);
+    }
+    if(handle){
+      handle.addEventListener('click', showNav);
+    }
+    // Wisch-nach-oben vom unteren Bildschirmrand blendet die Leiste ein
+    var touchStartY = null, touchStartX = null;
+    document.addEventListener('touchstart', function(ev){
+      var t = ev.touches[0];
+      if(t.clientY > window.innerHeight - 40){
+        touchStartY = t.clientY; touchStartX = t.clientX;
+      } else {
+        touchStartY = null;
+      }
+    }, {passive:true});
+    document.addEventListener('touchmove', function(ev){
+      if(touchStartY===null) return;
+      var t = ev.touches[0];
+      if(touchStartY - t.clientY > 18){
+        showNav();
+        touchStartY = null;
+      }
+    }, {passive:true});
+    if(fab){
+      fab.addEventListener('click', function(){
+        state.tab = 'form';
+        if(state.editingId===null) state.form = blankForm();
+        state.pendingDelete = null;
+        render();
+        showNav();
+      });
+    }
+    scheduleNavHide();
+  })();
 
   render();
   loadExpenses();
