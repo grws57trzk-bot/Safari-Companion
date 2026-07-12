@@ -560,6 +560,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   var CLOUD_ID = 'safari-companion-main';
   var cloudSaveTimer = null;
 
+  var lastCloudError = null; // für sichtbare Diagnose-Anzeige in der App
+
   async function cloudRequest(method, body){
     var url = SUPABASE_URL + '/rest/v1/safari_sync?trip_code=eq.' + encodeURIComponent(CLOUD_ID);
     var headers = {
@@ -571,7 +573,11 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     var opts = {method:method, headers:headers};
     if(body) opts.body = JSON.stringify(body);
     var res = await fetch(url, opts);
-    if(!res.ok) throw new Error('Cloud-Fehler ' + res.status);
+    if(!res.ok){
+      var bodyText = '';
+      try{ bodyText = await res.text(); }catch(e2){}
+      throw new Error('HTTP ' + res.status + ' ' + res.statusText + (bodyText ? ' — ' + bodyText : ''));
+    }
     if(method === 'GET') return await res.json();
   }
 
@@ -618,7 +624,9 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       }
     }catch(e){
       cloudStatus = 'error';
+      lastCloudError = 'GET fehlgeschlagen: ' + e.message;
       console.warn('Cloud nicht erreichbar, lokale Daten bleiben aktiv.', e);
+      render();
     }
   }
 
@@ -629,9 +637,12 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       lastCloudSnapshot = JSON.stringify(payload);
       state.storageMode = 'cloud';
       cloudStatus = 'ok';
+      lastCloudError = null;
     }catch(e){
       cloudStatus = 'error';
+      lastCloudError = 'SAVE fehlgeschlagen: ' + e.message;
       console.warn('Cloud-Speicherung fehlgeschlagen.', e);
+      render();
     }
   }
 
@@ -1249,6 +1260,9 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     else if(state.tab==='wildlife') html = renderWildlife();
     else if(state.tab==='fuel') html = renderFuel();
     else if(state.tab==='settings') html = renderSettings();
+    if(lastCloudError){
+      html = '<div style="background:#c0392b;color:#fff;padding:12px 14px;margin:8px 4px;border-radius:10px;font-family:monospace;font-size:13px;word-break:break-word;">☁️❌ CLOUD-FEHLER:<br>' + lastCloudError.replace(/</g,'&lt;') + '</div>' + html;
+    }
     main.innerHTML = html;
     nav.innerHTML = renderNav();
     main.scrollTop = 0;
