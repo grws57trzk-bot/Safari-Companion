@@ -561,12 +561,12 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   var cloudSaveTimer = null;
 
   async function cloudRequest(method, body){
-    var url = SUPABASE_URL + '/rest/v1/safari_sync?trip_code=eq.' + encodeURIComponent(CLOUD_ID);
+    var url = SUPABASE_URL + '/rest/v1/safari_sync?trip_code=eq.' + encodeURIComponent(CLOUD_ID) + (method === 'POST' ? '&on_conflict=trip_code' : '');
     var headers = {
       'apikey': SUPABASE_KEY,
       'Authorization': 'Bearer ' + SUPABASE_KEY,
       'Content-Type': 'application/json',
-      'Prefer': method === 'POST' ? 'resolution=merge-duplicates,return=minimal' : 'return=minimal'
+      'Prefer': method === 'POST' ? 'resolution=merge-duplicates,return=minimal' : 'return=representation'
     };
     var opts = {method:method, headers:headers};
     if(body) opts.body = JSON.stringify(body);
@@ -575,11 +575,37 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     if(method === 'GET') return await res.json();
   }
 
-  async function loadCloudData(){
+  var lastCloudSnapshot = null; // letzter bekannter Stand aus der Cloud, zum Erkennen von Änderungen
+  var lastLocalChangeAt = 0;    // Zeitpunkt der letzten eigenen Änderung, um Wettlaufsituationen zu vermeiden
+  var cloudPollTimer = null;
+  var cloudStatus = 'unknown';  // 'ok' | 'error' | 'unknown' – für Diagnose-Anzeige
+
+  function isEditingNow(){
+    var el = document.activeElement;
+    if(!el) return false;
+    var tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  }
+
+  async function loadCloudData(isPoll){
     try{
       var rows = await cloudRequest('GET');
+      cloudStatus = 'ok';
       if(rows && rows[0] && rows[0].app_data){
         var d = rows[0].app_data;
+        var incomingRaw = JSON.stringify(d);
+        // Nichts Neues? Dann gar nichts anfassen (kein Re-Render, kein Flackern).
+        if(incomingRaw === lastCloudSnapshot) return;
+
+        // Während der Nutzer gerade tippt/etwas auswählt, nicht drüberbügeln.
+        // Beim nächsten Poll (oder beim Fokus-Wechsel) wird nachgezogen.
+        if(isPoll && isEditingNow()) return;
+
+        // Eigene Änderung ist frisch (< 2s) unterwegs zur Cloud -> nicht überschreiben,
+        // sonst kann ein Poll dazwischenfunken und den eigenen Save "zurückrollen".
+        if(Date.now() - lastLocalChangeAt < 2000) return;
+
+        lastCloudSnapshot = incomingRaw;
         if(Array.isArray(d.expenses)) state.expenses = d.expenses;
         if(d.settings) state.settings = Object.assign(state.settings, d.settings);
         PAYERS = (state.settings.payers || ['Dirk & Antje','Sven']).slice();
@@ -587,24 +613,49 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         localStorage.setItem('reisekasse_settings', JSON.stringify(state.settings));
         state.storageMode = 'cloud';
         render();
-      } else {
+      } else if(!isPoll){
         await saveCloudData();
       }
     }catch(e){
+      cloudStatus = 'error';
       console.warn('Cloud nicht erreichbar, lokale Daten bleiben aktiv.', e);
     }
   }
 
   async function saveCloudData(){
     try{
-      await cloudRequest('POST', {trip_code:CLOUD_ID, app_data:{expenses:state.expenses, settings:state.settings}, updated_at:new Date().toISOString()});
+      var payload = {expenses:state.expenses, settings:state.settings};
+      await cloudRequest('POST', {trip_code:CLOUD_ID, app_data:payload, updated_at:new Date().toISOString()});
+      lastCloudSnapshot = JSON.stringify(payload);
       state.storageMode = 'cloud';
-    }catch(e){ console.warn('Cloud-Speicherung fehlgeschlagen.', e); }
+      cloudStatus = 'ok';
+    }catch(e){
+      cloudStatus = 'error';
+      console.warn('Cloud-Speicherung fehlgeschlagen.', e);
+    }
   }
 
   function queueCloudSave(){
+    lastLocalChangeAt = Date.now();
     clearTimeout(cloudSaveTimer);
     cloudSaveTimer = setTimeout(saveCloudData, 350);
+  }
+
+  // ---------- Live-Sync zwischen Geräten ----------
+  // 1) Regelmäßiges Polling im Hintergrund (alle 6s), solange die App offen/sichtbar ist.
+  // 2) Sofortiger Abgleich, sobald die App wieder in den Vordergrund kommt
+  //    (z.B. App-Wechsel auf dem Handy, Bildschirm wieder einschalten).
+  function startCloudSync(){
+    clearInterval(cloudPollTimer);
+    cloudPollTimer = setInterval(function(){
+      if(document.hidden) return;
+      loadCloudData(true);
+    }, 6000);
+
+    document.addEventListener('visibilitychange', function(){
+      if(!document.hidden) loadCloudData(true);
+    });
+    window.addEventListener('focus', function(){ loadCloudData(true); });
   }
 
   // ---------- Data ----------
@@ -720,7 +771,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     }catch(e){}
     state.loaded = true;
     render();
-    loadCloudData();
+    loadCloudData().then(startCloudSync);
   }
 
   async function persist(){
@@ -1149,7 +1200,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     });
     html+='</div><button class="tool-btn" id="add-participant" style="width:100%;margin-top:4px">＋ Teilnehmer hinzufügen</button>';
     html+='<button class="save-btn" id="save-participants">Teilnehmer speichern</button>';
-    html+='<div class="hint-box">Version 2.4 · Daten werden automatisch über Supabase zwischen euren Geräten synchronisiert. Erstelle regelmäßig ein Backup und bewahre es in iCloud Drive auf.</div>';
+    html+='<div class="hint-box">Version 2.5 · Daten werden automatisch über Supabase zwischen euren Geräten synchronisiert (alle 6 Sekunden im Hintergrund sowie sofort, wenn ihr die App wieder öffnet). Erstelle regelmäßig ein Backup und bewahre es in iCloud Drive auf.</div>';
     html+='<div class="section-title" style="margin-top:22px">App-Daten</div><button class="tool-btn danger" id="reset-all" style="width:100%">🗑️ Alle App-Daten löschen</button>';
     html+='<div class="hint-box">Bestehende Ausgaben bleiben erhalten. Wenn du einen Namen änderst, werden bisherige Ausgaben dieses Teilnehmers automatisch auf den neuen Namen übertragen. Für den Ausgleich werden gemeinsame Ausgaben gleichmäßig auf alle Teilnehmer verteilt.</div></div>';
     return html;
@@ -1293,7 +1344,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         if(names.length<2){alert('Bitte mindestens zwei Teilnehmer eintragen.');return;}
         if(new Set(names).size!==names.length){alert('Jeder Teilnehmer braucht einen eindeutigen Namen.');return;}
         old.forEach(function(o,i){if(names[i]&&o!==names[i])state.expenses.forEach(function(e){if(e.payer===o)e.payer=names[i];});});
-        PAYERS=names;state.settings.payers=names.slice();persist();persistSettings();saveCloudData();render();showToast('Teilnehmer gespeichert');
+        PAYERS=names;state.settings.payers=names.slice();persist();persistSettings();render();showToast('Teilnehmer gespeichert');
       });
     }
     if(state.tab==='dashboard'){
