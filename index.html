@@ -545,6 +545,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   <header>
     <div class="eyebrow">Reisekasse</div>
     <h1>Namibia <em>&</em> Botswana</h1>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Build 2026-07-12-C</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -555,15 +556,16 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   "use strict";
 
   // ---------- Supabase Cloud-Synchronisierung ----------
-  var SUPABASE_URL = 'https://hvehusfbvkcaectqulf.supabase.co';
-  var SUPABASE_KEY = 'sb_publishable_HwBhQLF2Nj_3DYxQEFND9A_MtPw_RKR';
+  var SUPABASE_URL = 'HIER_DEINE_SUPABASE_URL_EINTRAGEN';   // z.B. https://abcxyz.supabase.co
+  var SUPABASE_KEY = 'HIER_DEINEN_SUPABASE_ANON_KEY_EINTRAGEN';
   var CLOUD_ID = 'safari-companion-main';
   var cloudSaveTimer = null;
 
   var lastCloudError = null; // für sichtbare Diagnose-Anzeige in der App
+  var lastCloudSuccessAt = null; // Uhrzeit des letzten erfolgreichen Cloud-Saves
 
   async function cloudRequest(method, body){
-    var url = SUPABASE_URL + '/rest/v1/safari_sync?trip_code=eq.' + encodeURIComponent(CLOUD_ID);
+    var url = SUPABASE_URL + '/rest/v1/reisekasse_sync?id=eq.' + encodeURIComponent(CLOUD_ID);
     var headers = {
       'apikey': SUPABASE_KEY,
       'Authorization': 'Bearer ' + SUPABASE_KEY,
@@ -597,8 +599,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     try{
       var rows = await cloudRequest('GET');
       cloudStatus = 'ok';
-      if(rows && rows[0] && rows[0].app_data){
-        var d = rows[0].app_data;
+      if(rows && rows[0] && rows[0].data){
+        var d = rows[0].data;
         var incomingRaw = JSON.stringify(d);
         // Nichts Neues? Dann gar nichts anfassen (kein Re-Render, kein Flackern).
         if(incomingRaw === lastCloudSnapshot) return;
@@ -633,11 +635,13 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   async function saveCloudData(){
     try{
       var payload = {expenses:state.expenses, settings:state.settings};
-      await cloudRequest('POST', {trip_code:CLOUD_ID, app_data:payload, updated_at:new Date().toISOString()});
+      await cloudRequest('POST', {id:CLOUD_ID, data:payload, updated_at:new Date().toISOString()});
       lastCloudSnapshot = JSON.stringify(payload);
       state.storageMode = 'cloud';
       cloudStatus = 'ok';
       lastCloudError = null;
+      lastCloudSuccessAt = new Date().toLocaleTimeString('de-DE');
+      render();
     }catch(e){
       cloudStatus = 'error';
       lastCloudError = 'SAVE fehlgeschlagen: ' + e.message;
@@ -1262,6 +1266,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     else if(state.tab==='settings') html = renderSettings();
     if(lastCloudError){
       html = '<div style="background:#c0392b;color:#fff;padding:12px 14px;margin:8px 4px;border-radius:10px;font-family:monospace;font-size:13px;word-break:break-word;">☁️❌ CLOUD-FEHLER:<br>' + lastCloudError.replace(/</g,'&lt;') + '</div>' + html;
+    } else if(lastCloudSuccessAt){
+      html = '<div style="background:#27ae60;color:#fff;padding:8px 14px;margin:8px 4px;border-radius:10px;font-family:monospace;font-size:12px;">☁️✅ Zuletzt erfolgreich in Cloud gespeichert: ' + lastCloudSuccessAt + '</div>' + html;
     }
     main.innerHTML = html;
     nav.innerHTML = renderNav();
