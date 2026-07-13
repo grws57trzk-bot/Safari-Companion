@@ -599,7 +599,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   <header>
     <div class="eyebrow">Reisekasse</div>
     <h1 id="app-title">Namibia <em>&</em> Botswana</h1>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Build 2026-07-12-O (Hintergrund heller, Schrift lesbar)</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Build 2026-07-12-P (Packliste gemeinsam mit Ampel-System)</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -750,14 +750,16 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
 
   var PAYERS = ['Dirk & Antje', 'Sven'];
   var PACKING_TEMPLATE = [{"category": "Dokumente", "text": "Reisepass (mind. 6 Monate gültig, mind. 2 leere Seiten)"}, {"category": "Dokumente", "text": "Nationaler Führerschein + Internationaler Führerschein"}, {"category": "Dokumente", "text": "Kreditkarten (mind. 2)"}, {"category": "Dokumente", "text": "Bargeld USD sowie NAD/BWP"}, {"category": "Dokumente", "text": "Auslandskranken- und Rückholversicherung"}, {"category": "Dokumente", "text": "Mietwagenvertrag inkl. Notfallnummer"}, {"category": "Dokumente", "text": "Buchungsbestätigungen"}, {"category": "Dokumente", "text": "Flugtickets"}, {"category": "Dokumente", "text": "Impfpass"}, {"category": "Dokumente", "text": "Passfotos"}, {"category": "Dokumente", "text": "Kopien wichtiger Dokumente – Papier + Cloud"}, {"category": "Dokumente", "text": "Kontakte der deutschen Botschaften"}, {"category": "Reisemedizin", "text": "Malariaprophylaxe nach ärztlicher Rücksprache"}, {"category": "Reisemedizin", "text": "Mückenschutz mit hohem DEET-Anteil"}, {"category": "Reisemedizin", "text": "Moskitonetz"}, {"category": "Reisemedizin", "text": "Persönliche Medikamente + Rezeptkopie"}, {"category": "Reisemedizin", "text": "Schmerz-/Fiebermittel"}, {"category": "Reisemedizin", "text": "Durchfallmittel + Elektrolyte"}, {"category": "Reisemedizin", "text": "Mittel gegen Übelkeit"}, {"category": "Reisemedizin", "text": "Antihistaminikum"}, {"category": "Reisemedizin", "text": "Pflaster und Verbandsmaterial"}, {"category": "Reisemedizin", "text": "Desinfektionsmittel"}, {"category": "Reisemedizin", "text": "Pinzette, Schere, Zeckenzange"}, {"category": "Reisemedizin", "text": "Fieberthermometer"}, {"category": "Reisemedizin", "text": "Sonnencreme + Lippenpflege mit LSF"}, {"category": "Reisemedizin", "text": "Aftersun"}, {"category": "Reisemedizin", "text": "Desinfektionsgel"}, {"category": "Kleidung", "text": "Zwiebellook, atmungsaktiv und schnelltrocknend"}, {"category": "Kleidung", "text": "Neutrale Farben: khaki, oliv, braun"}, {"category": "Kleidung", "text": "Lange Hosen und Langarmshirts"}, {"category": "Kleidung", "text": "T-Shirts und kurze Hosen"}, {"category": "Kleidung", "text": "Fleecejacke/Softshell"}, {"category": "Kleidung", "text": "Leichte Regenjacke"}, {"category": "Kleidung", "text": "Mütze und Handschuhe"}, {"category": "Kleidung", "text": "Geschlossene Schuhe/Wanderschuhe"}, {"category": "Kleidung", "text": "Sandalen"}, {"category": "Kleidung", "text": "Hut/Cap + Sonnenbrille"}, {"category": "Kleidung", "text": "Buff/Halstuch"}, {"category": "Kleidung", "text": "Badesachen"}, {"category": "Kleidung", "text": "Unterwäsche und Socken"}, {"category": "Auto", "text": "Werkzeugset"}, {"category": "Auto", "text": "2 Ersatzreifen + Reifenpannenset"}, {"category": "Auto", "text": "Kompressor + Luftdruckmesser"}, {"category": "Auto", "text": "Wagenheber + Radmutternschlüssel testen"}, {"category": "Auto", "text": "Abschleppseil"}, {"category": "Auto", "text": "Starterkabel"}, {"category": "Auto", "text": "Ersatzsicherungen und Glühbirnen"}, {"category": "Auto", "text": "Panzertape/Kabelbinder"}, {"category": "Auto", "text": "Erste-Hilfe-Kasten"}, {"category": "Auto", "text": "Warndreieck + Warnweste"}, {"category": "Auto", "text": "Sandbleche"}, {"category": "Auto", "text": "Sprit- und Wasserkanister"}, {"category": "Auto", "text": "Motoröl + Kühlwasser"}, {"category": "Auto", "text": "Arbeitshandschuhe"}, {"category": "Auto", "text": "Plane/Persenning"}, {"category": "Auto", "text": "GPS/Offline-Karten"}, {"category": "Auto", "text": "Satellitentelefon/Notfunkgerät"}, {"category": "Auto", "text": "Stirnlampe + Batterien"}, {"category": "Auto", "text": "Powerbank + Autoladekabel"}, {"category": "Sonstiges", "text": "Fernglas"}, {"category": "Sonstiges", "text": "Kamera + Akkus/Speicherkarten"}, {"category": "Sonstiges", "text": "Steckdosenadapter Typ D/M"}, {"category": "Sonstiges", "text": "Kühlbox"}, {"category": "Sonstiges", "text": "Wasserfilter/Reinigungstabletten"}, {"category": "Sonstiges", "text": "Insektenspray"}, {"category": "Sonstiges", "text": "Schlafsack/Decke"}, {"category": "Sonstiges", "text": "Müllbeutel"}, {"category": "Sonstiges", "text": "Multitool"}, {"category": "Sonstiges", "text": "Feuchttücher + Toilettenpapier"}];
-  function ensurePackingForPerson(personName){
+  function ensureSharedPackingList(){
     if(!Array.isArray(state.settings.packingEntries)) state.settings.packingEntries=[];
-    var has = state.settings.packingEntries.some(function(x){return x.person===personName;});
-    if(has) return;
-    var base = Date.now();
-    PACKING_TEMPLATE.forEach(function(t,i){
-      state.settings.packingEntries.push({id: base + i, category:t.category, text:t.text, status:'offen', person:personName});
-    });
+    var looksMigrated = state.settings.packingEntries.length && state.settings.packingEntries[0].hasOwnProperty('confirmedBy');
+    var hasDuplicates = state.settings.packingEntries.length > PACKING_TEMPLATE.length + 5; // alte Version hatte mehrfache Kopien pro Person
+    if(!state.settings.packingEntries.length || !looksMigrated || hasDuplicates){
+      var base = Date.now();
+      state.settings.packingEntries = PACKING_TEMPLATE.map(function(t,i){
+        return {id: base + i, category:t.category, text:t.text, confirmedBy:[]};
+      });
+    }
   }
 
   var ICONS = {
@@ -858,7 +860,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       if(!Array.isArray(state.settings.itineraryEntries)) state.settings.itineraryEntries=[];
       if(!Array.isArray(state.settings.checklistEntries)) state.settings.checklistEntries=[];
       PAYERS = state.settings.payers.slice();
-      PAYERS.forEach(function(p){ensurePackingForPerson(p);});
+      ensureSharedPackingList();
     }catch(e){}
     state.loaded = true;
     render();
@@ -1172,27 +1174,36 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
 
 
   function renderPacking(){
-    var allItems=state.settings.packingEntries;
-    allItems.forEach(function(x){ if(!x.person) x.person='Gemeinsam'; });
-    var people=['Gemeinsam'].concat(PAYERS);
-    var filter=state.packFilterPerson||'alle';
-    var items = filter==='alle' ? allItems : allItems.filter(function(x){return x.person===filter;});
-    var done=items.filter(function(x){return x.status==='gepackt';}).length;
-    var html='<div class="section-title">Safari-Packliste</div><div class="trip-hero"><h2>🎒 Packliste</h2><div class="route">'+done+' von '+items.length+' gepackt'+(filter!=='alle'?' · '+escapeAttr(filter):'')+'</div><div class="progress"><i style="width:'+(items.length?Math.round(done/items.length*100):0)+'%"></i></div></div>';
-    html+='<div class="section-title">Liste</div><div class="filters">';
-    html+='<span class="chip'+(filter==='alle'?' active':'')+'" data-pack-filter="alle">Alle</span>';
-    people.forEach(function(p){html+='<span class="chip'+(filter===p?' active':'')+'" data-pack-filter="'+escapeAttr(p)+'">'+escapeAttr(p)+'</span>';});
-    html+='</div>';
-    html+='<div class="card"><div class="field"><label>Neuer Eintrag</label><input id="pack-text" placeholder="Gegenstand hinzufügen"></div>';
-    html+='<div class="fuel-grid"><div class="field"><label>Kategorie</label><select id="pack-cat"><option>Dokumente</option><option>Reisemedizin</option><option>Kleidung</option><option>Auto</option><option>Sonstiges</option></select></div><div class="field"><label>Für</label><select id="pack-person">'+people.map(function(p){return '<option value="'+escapeAttr(p)+'" '+(filter===p?'selected':'')+'>'+escapeAttr(p)+'</option>';}).join('')+'</select></div></div>';
+    var items=state.settings.packingEntries;
+    items.forEach(function(x){ if(!Array.isArray(x.confirmedBy)) x.confirmedBy=[]; });
+    var done=items.filter(function(x){return PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});}).length;
+    var html='<div class="section-title">Safari-Packliste</div><div class="trip-hero"><h2>🎒 Packliste</h2><div class="route">'+done+' von '+items.length+' von allen bestätigt</div><div class="progress"><i style="width:'+(items.length?Math.round(done/items.length*100):0)+'%"></i></div></div>';
+    html+='<div class="section-title">Neuer Eintrag</div><div class="card"><div class="field"><label>Gegenstand</label><input id="pack-text" placeholder="Gegenstand hinzufügen"></div>';
+    html+='<div class="field"><label>Kategorie</label><select id="pack-cat"><option>Dokumente</option><option>Reisemedizin</option><option>Kleidung</option><option>Auto</option><option>Sonstiges</option></select></div>';
     html+='<button class="save-btn" id="pack-add">Hinzufügen</button></div>';
     ['Dokumente','Reisemedizin','Kleidung','Auto','Sonstiges'].forEach(function(cat){
       var list=items.filter(function(x){return x.category===cat;}); if(!list.length)return;
       html+='<div class="section-title">'+cat+'</div><div class="card">';
-      list.forEach(function(x){html+='<div class="check-row '+(x.status==='gepackt'?'done':'')+'"><div class="check-text">'+escapeAttr(x.text)+(filter==='alle'?' <span style="color:var(--gold-dim);font-size:11px">· '+escapeAttr(x.person)+'</span>':'')+'<div style="margin-top:7px"><select data-pack-select="'+x.id+'" style="width:100%;min-height:40px"><option value="offen" '+(x.status==='offen'?'selected':'')+'>○ Offen</option><option value="besorgt" '+(x.status==='besorgt'?'selected':'')+'>🛍️ Besorgt</option><option value="vorort" '+(x.status==='vorort'?'selected':'')+'>📍 Wird vor Ort gekauft</option><option value="gepackt" '+(x.status==='gepackt'?'selected':'')+'>✅ Gepackt</option></select></div></div><button class="del-btn" data-pack-del="'+x.id+'">✕</button></div>';});
+      list.forEach(function(x){
+        var confirmedCount = PAYERS.filter(function(p){return x.confirmedBy.indexOf(p)!==-1;}).length;
+        var light = confirmedCount===0 ? 'red' : (confirmedCount<PAYERS.length ? 'yellow' : 'green');
+        var lightColor = light==='green' ? '#5fae6b' : (light==='yellow' ? '#e0b23c' : '#c15b4a');
+        html+='<div class="check-row '+(light==='green'?'done':'')+'" style="flex-direction:column;align-items:stretch;gap:8px">';
+        html+='<div style="display:flex;align-items:center;gap:10px">';
+        html+='<span style="width:12px;height:12px;border-radius:50%;background:'+lightColor+';flex-shrink:0;box-shadow:0 0 6px '+lightColor+'"></span>';
+        html+='<div class="check-text" style="flex:1">'+escapeAttr(x.text)+'</div>';
+        html+='<button class="del-btn" data-pack-del="'+x.id+'" style="position:static">✕</button>';
+        html+='</div>';
+        html+='<div style="display:flex;gap:6px;flex-wrap:wrap;padding-left:22px">';
+        PAYERS.forEach(function(p){
+          var confirmed = x.confirmedBy.indexOf(p)!==-1;
+          html+='<span class="chip'+(confirmed?' active':'')+'" data-pack-confirm="'+x.id+'" data-pack-person="'+escapeAttr(p)+'" style="cursor:pointer">'+(confirmed?'✓ ':'○ ')+escapeAttr(p)+'</span>';
+        });
+        html+='</div></div>';
+      });
       html+='</div>';
     });
-    if(!items.length) html+='<div class="empty">Noch keine Einträge'+(filter!=='alle'?' für '+escapeAttr(filter):'')+'.</div>';
+    if(!items.length) html+='<div class="empty">Noch keine Einträge.</div>';
     return html;
   }
 
@@ -1451,9 +1462,19 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   // ---------- Events ----------
   function bindEvents(){
     if(state.tab==='packing'){
-      document.querySelectorAll('[data-pack-filter]').forEach(function(el){el.addEventListener('click',function(){state.packFilterPerson=el.getAttribute('data-pack-filter');render();});});
-      var pa=document.getElementById('pack-add'); if(pa)pa.addEventListener('click',function(){var t=document.getElementById('pack-text').value.trim();if(!t)return;var personEl=document.getElementById('pack-person');state.settings.packingEntries.push({id:Date.now(),text:t,category:document.getElementById('pack-cat').value,status:'offen',person:personEl?personEl.value:'Gemeinsam'});persistSettings();render();showToast('Eintrag hinzugefügt');});
-      document.querySelectorAll('[data-pack-select]').forEach(function(el){el.addEventListener('change',function(){var x=state.settings.packingEntries.find(function(i){return i.id===Number(el.getAttribute('data-pack-select'));});if(x)x.status=el.value;persistSettings();render();showToast('Status gespeichert');});});
+      var pa=document.getElementById('pack-add'); if(pa)pa.addEventListener('click',function(){var t=document.getElementById('pack-text').value.trim();if(!t)return;state.settings.packingEntries.push({id:Date.now(),text:t,category:document.getElementById('pack-cat').value,confirmedBy:[]});persistSettings();render();showToast('Eintrag hinzugefügt');});
+      document.querySelectorAll('[data-pack-confirm]').forEach(function(el){el.addEventListener('click',function(){
+        var id=Number(el.getAttribute('data-pack-confirm'));
+        var person=el.getAttribute('data-pack-person');
+        var x=state.settings.packingEntries.find(function(i){return i.id===id;});
+        if(!x) return;
+        if(!Array.isArray(x.confirmedBy)) x.confirmedBy=[];
+        var idx=x.confirmedBy.indexOf(person);
+        if(idx===-1) x.confirmedBy.push(person); else x.confirmedBy.splice(idx,1);
+        var allConfirmed = PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});
+        persistSettings();render();
+        if(allConfirmed) showToast('✅ Von allen bestätigt: '+x.text);
+      });});
       document.querySelectorAll('[data-pack-del]').forEach(function(b){b.addEventListener('click',function(){if(confirm('Eintrag löschen?')){var id=Number(b.getAttribute('data-pack-del'));state.settings.packingEntries=state.settings.packingEntries.filter(function(i){return i.id!==id;});persistSettings();render();}});});
     }
 
@@ -1564,10 +1585,13 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         if(new Set(names).size!==names.length){alert('Jeder Teilnehmer braucht einen eindeutigen Namen.');return;}
         old.forEach(function(o,i){if(names[i]&&o!==names[i]){
           state.expenses.forEach(function(e){if(e.payer===o)e.payer=names[i];});
-          state.settings.packingEntries.forEach(function(x){if(x.person===o)x.person=names[i];});
+          state.settings.packingEntries.forEach(function(x){
+            if(!Array.isArray(x.confirmedBy)) x.confirmedBy=[];
+            var idx=x.confirmedBy.indexOf(o);
+            if(idx!==-1) x.confirmedBy[idx]=names[i];
+          });
         }});
         PAYERS=names;state.settings.payers=names.slice();
-        PAYERS.forEach(function(p){ensurePackingForPerson(p);});
         persist();persistSettings();render();showToast('Teilnehmer gespeichert');
       });
       document.querySelectorAll('[data-tab-toggle]').forEach(function(cb){
