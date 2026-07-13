@@ -599,7 +599,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   <header>
     <div class="eyebrow">Reisekasse</div>
     <h1 id="app-title">Namibia <em>&</em> Botswana</h1>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-S</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-T</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -819,7 +819,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       payer: 'Dirk & Antje',
       type: 'gemeinsam',
       date: new Date().toISOString().slice(0,10),
-      receipt: null
+      receipt: null,
+      note: ''
     };
   }
   state.form = blankForm();
@@ -1037,6 +1038,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
 
     html += '<div class="field"><label>Betrag</label><input type="number" inputmode="decimal" step="0.01" id="f-amount" placeholder="0.00" value="'+escapeAttr(f.amount)+'"></div>';
 
+    html += '<div class="field"><label>Notiz (optional)</label><input type="text" id="f-note" placeholder="z.B. Belegnummer, Details …" value="'+escapeAttr(f.note||'')+'"></div>';
+
     html += '<div class="field"><label>Währung</label><div class="currency-row">';
     CURRENCIES.forEach(function(cur){
       html += '<button type="button" data-cur="'+cur+'" class="'+(f.currency===cur?'active':'')+'">'+cur+'</button>';
@@ -1121,7 +1124,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       html += '<div class="exp-item" data-id="'+e.id+'">';
       html += e.receipt ? '<img class="receipt-thumb" data-edit="'+e.id+'" src="'+e.receipt+'" alt="Beleg">' : '<div class="stamp sm" data-edit="'+e.id+'">'+cat.icon+'</div>';
       html += '<div class="meta" data-edit="'+e.id+'"><div class="desc">'+escapeAttr(e.description||cat.label)+'<span class="payer-tag">'+e.payer+'</span>'+((e.type==='persoenlich')?'<span class="payer-tag" style="color:var(--rust);border-color:var(--rust);">🔒 privat</span>':'')+'</div>';
-      html += '<div class="sub">'+cat.label+'</div></div>';
+      html += '<div class="sub">'+cat.label+(e.note?' · '+escapeAttr(e.note):'')+'</div></div>';
       html += '<div class="amt" data-edit="'+e.id+'">'+fmt(e.amount, e.currency)+'</div>';
       if(pendingThis){
         html += '<div class="del-confirm"><button class="yes" data-del-yes="'+e.id+'">Löschen</button><button data-del-no="1">Abbr.</button></div>';
@@ -1735,9 +1738,11 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       });
       var descEl = document.getElementById('f-desc');
       var amtEl = document.getElementById('f-amount');
+      var noteEl = document.getElementById('f-note');
       var dateEl = document.getElementById('f-date');
       if(descEl) descEl.addEventListener('input', function(){ state.form.description = descEl.value; });
       if(amtEl) amtEl.addEventListener('input', function(){ state.form.amount = amtEl.value; });
+      if(noteEl) noteEl.addEventListener('input', function(){ state.form.note = noteEl.value; });
       if(dateEl) dateEl.addEventListener('input', function(){ state.form.date = dateEl.value; });
       var receiptInput=document.getElementById('receipt-input');
       var receiptCameraInput=document.getElementById('receipt-camera-input');
@@ -1789,7 +1794,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
           state.form = {
             category: exp.category, description: exp.description, amount: exp.amount,
             currency: exp.currency, payer: exp.payer, date: exp.date, type: exp.type || 'gemeinsam',
-            receipt: exp.receipt || null
+            receipt: exp.receipt || null, note: exp.note || ''
           };
           state.tab = 'form';
           render();
@@ -1834,13 +1839,15 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       if(exp){
         exp.category = f.category; exp.description = f.description; exp.amount = Number(f.amount);
         exp.currency = f.currency; exp.payer = f.payer; exp.date = f.date; exp.type = f.type; exp.receipt = f.receipt || null;
+        exp.note = f.note || '';
       }
       state.editingId = null;
     } else {
       state.expenses.push({
         id: Date.now(),
         category: f.category, description: f.description, amount: Number(f.amount),
-        currency: f.currency, payer: f.payer, date: f.date, type: f.type, receipt: f.receipt || null
+        currency: f.currency, payer: f.payer, date: f.date, type: f.type, receipt: f.receipt || null,
+        note: f.note || ''
       });
     }
     persist();
