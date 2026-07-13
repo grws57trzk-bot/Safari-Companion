@@ -599,7 +599,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   <header>
     <div class="eyebrow">Reisekasse</div>
     <h1 id="app-title">Namibia <em>&</em> Botswana</h1>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-R</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-S</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -790,6 +790,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     editingTripId: null,
     navEditOpen: false,
     participantsOpen: false,
+    dangerZoneOpen: false,
     pendingDelete: null,
     storageMode: 'local',
     settings: {
@@ -1340,11 +1341,16 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       html+='</div>';
     }
     html+='<div class="hint-box" style="margin-top:14px">Version 2.5 · Daten werden automatisch über Supabase zwischen euren Geräten synchronisiert (alle 6 Sekunden im Hintergrund sowie sofort, wenn ihr die App wieder öffnet). Erstelle regelmäßig ein Backup und bewahre es in iCloud Drive auf.</div>';
-    html+='<div class="section-title" style="margin-top:22px">Gefahrenzone</div>';
-    html+='<div class="card" style="display:flex;align-items:center;gap:14px">';
-    html+='<button type="button" id="reset-all" title="Alle App-Daten löschen" style="width:48px;height:48px;flex-shrink:0;border-radius:50%;background:rgba(193,91,74,.18);border:1px solid var(--red);color:var(--red);font-size:20px;display:flex;align-items:center;justify-content:center">🗑️</button>';
-    html+='<div style="font-size:12px;color:var(--sand-dim)">Löscht alle Ausgaben, Belege, Tankstopps, Sichtungen, Reiseetappen, Checklisten und Packliste. Erfordert PIN-Bestätigung.</div>';
-    html+='</div>';
+    html+='<div class="section-title" style="margin-top:22px">App-Daten</div>';
+    html+='<div class="card" id="danger-toggle" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">';
+    html+='<span style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">🗑️</span><span>Alle App-Daten löschen</span></span>';
+    html+='<span id="danger-arrow" style="transition:transform .2s ease;'+(state.dangerZoneOpen?'transform:rotate(180deg)':'')+'">▾</span></div>';
+    if(state.dangerZoneOpen){
+      html+='<div class="card">';
+      html+='<div style="font-size:12px;color:var(--sand-dim);margin-bottom:12px">Löscht alle Ausgaben, Belege, Tankstopps, Sichtungen, Reiseetappen, Checklisten und Packliste. Erfordert PIN-Bestätigung.</div>';
+      html+='<button type="button" id="reset-all" title="Alle App-Daten löschen" style="width:48px;height:48px;border-radius:50%;background:rgba(193,91,74,.18);border:1px solid var(--red);color:var(--red);font-size:20px;display:flex;align-items:center;justify-content:center">🗑️</button>';
+      html+='</div>';
+    }
     html+='<div class="section-title" style="margin-top:22px">Navigationsleiste bearbeiten</div>';
     html+='<div class="card" id="nav-edit-toggle" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">';
     html+='<span>Tabs anzeigen/ausblenden & Kategorien verwalten</span><span id="nav-edit-arrow" style="transition:transform .2s ease;'+(state.navEditOpen?'transform:rotate(180deg)':'')+'">▾</span></div>';
@@ -1616,6 +1622,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       if(navEditToggle) navEditToggle.addEventListener('click',function(){ state.navEditOpen=!state.navEditOpen; render(); });
       var participantsToggle=document.getElementById('participants-toggle');
       if(participantsToggle) participantsToggle.addEventListener('click',function(){ state.participantsOpen=!state.participantsOpen; render(); });
+      var dangerToggle=document.getElementById('danger-toggle');
+      if(dangerToggle) dangerToggle.addEventListener('click',function(){ state.dangerZoneOpen=!state.dangerZoneOpen; render(); });
       document.querySelectorAll('[data-tab-toggle]').forEach(function(cb){
         cb.addEventListener('change',function(){
           var key=cb.getAttribute('data-tab-toggle');
