@@ -599,7 +599,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   <header>
     <div class="eyebrow">Reisekasse</div>
     <h1 id="app-title">Namibia <em>&</em> Botswana</h1>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-T</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-U</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -787,6 +787,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     histFilterPayer: 'all',
     histFilterType: 'all',
     packFilterPerson: 'alle',
+    packView: 'alle',
     editingTripId: null,
     navEditOpen: false,
     participantsOpen: false,
@@ -1179,11 +1180,31 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   }
 
 
+  var CHECKLIST_CAT_MAP = {'Dokumente':'Dokumente','Reisemedizin':'Gesundheit','Kleidung':'Gepäck','Auto':'Fahrzeug','Sonstiges':'Sonstiges'};
+
+  function syncPackingItemToChecklist(item){
+    if(!Array.isArray(state.settings.checklistEntries)) state.settings.checklistEntries=[];
+    var already = state.settings.checklistEntries.some(function(c){return c.fromPacking===item.id;});
+    if(already) return;
+    state.settings.checklistEntries.push({
+      id: Date.now()+Math.floor(Math.random()*1000),
+      text: item.text,
+      category: CHECKLIST_CAT_MAP[item.category] || 'Sonstiges',
+      done: false,
+      fromPacking: item.id
+    });
+  }
+
   function renderPacking(){
     var items=state.settings.packingEntries;
     items.forEach(function(x){ if(!Array.isArray(x.confirmedBy)) x.confirmedBy=[]; });
     var done=items.filter(function(x){return PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});}).length;
+    var view = state.packView || 'alle';
     var html='<div class="section-title">Safari-Packliste</div><div class="trip-hero"><h2>🎒 Packliste</h2><div class="route">'+done+' von '+items.length+' von allen bestätigt</div><div class="progress"><i style="width:'+(items.length?Math.round(done/items.length*100):0)+'%"></i></div></div>';
+    html+='<div class="section-title">Ansicht</div><div class="filters">';
+    html+='<span class="chip'+(view==='alle'?' active':'')+'" data-pack-view="alle">Alle</span>';
+    PAYERS.forEach(function(p){html+='<span class="chip'+(view===p?' active':'')+'" data-pack-view="'+escapeAttr(p)+'">'+escapeAttr(p)+'</span>';});
+    html+='</div>';
     html+='<div class="section-title">Neuer Eintrag</div><div class="card"><div class="field"><label>Gegenstand</label><input id="pack-text" placeholder="Gegenstand hinzufügen"></div>';
     html+='<div class="field"><label>Kategorie</label><select id="pack-cat"><option>Dokumente</option><option>Reisemedizin</option><option>Kleidung</option><option>Auto</option><option>Sonstiges</option></select></div>';
     html+='<button class="save-btn" id="pack-add">Hinzufügen</button></div>';
@@ -1201,10 +1222,16 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         html+='<button class="del-btn" data-pack-del="'+x.id+'" style="position:static">✕</button>';
         html+='</div>';
         html+='<div style="display:flex;gap:6px;flex-wrap:wrap;padding-left:22px">';
-        PAYERS.forEach(function(p){
-          var confirmed = x.confirmedBy.indexOf(p)!==-1;
-          html+='<span class="chip'+(confirmed?' active':'')+'" data-pack-confirm="'+x.id+'" data-pack-person="'+escapeAttr(p)+'" style="cursor:pointer">'+(confirmed?'✓ ':'○ ')+escapeAttr(p)+'</span>';
-        });
+        if(view==='alle'){
+          PAYERS.forEach(function(p){
+            var confirmed = x.confirmedBy.indexOf(p)!==-1;
+            html+='<span class="chip'+(confirmed?' active':'')+'" data-pack-confirm="'+x.id+'" data-pack-person="'+escapeAttr(p)+'" style="cursor:pointer">'+(confirmed?'✓ ':'○ ')+escapeAttr(p)+'</span>';
+          });
+        } else {
+          var myConfirmed = x.confirmedBy.indexOf(view)!==-1;
+          html+='<span class="chip'+(myConfirmed?' active':'')+'" data-pack-confirm="'+x.id+'" data-pack-person="'+escapeAttr(view)+'" style="cursor:pointer">'+(myConfirmed?'✓ Erledigt':'○ Erledigt')+'</span>';
+        }
+        html+='<span class="chip" data-pack-alone="'+x.id+'" style="cursor:pointer;border-color:var(--gold);color:var(--gold)">👤 Alleine erledigt</span>';
         html+='</div></div>';
       });
       html+='</div>';
@@ -1460,11 +1487,15 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     } else if(lastCloudSuccessAt){
       html = '<div style="background:#27ae60;color:#fff;padding:8px 14px;margin:8px 4px;border-radius:10px;font-family:monospace;font-size:12px;">☁️✅ Zuletzt erfolgreich in Cloud gespeichert: ' + lastCloudSuccessAt + '</div>' + html;
     }
+    var prevScroll = main.scrollTop;
+    var tabChanged = (state.tab !== lastRenderedTab);
     main.innerHTML = html;
     nav.innerHTML = renderNav();
-    main.scrollTop = 0;
+    main.scrollTop = tabChanged ? 0 : prevScroll;
+    lastRenderedTab = state.tab;
     bindEvents();
   }
+  var lastRenderedTab = null;
 
 
   function loadReceipt(file){
@@ -1490,6 +1521,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   function bindEvents(){
     if(state.tab==='packing'){
       var pa=document.getElementById('pack-add'); if(pa)pa.addEventListener('click',function(){var t=document.getElementById('pack-text').value.trim();if(!t)return;state.settings.packingEntries.push({id:Date.now(),text:t,category:document.getElementById('pack-cat').value,confirmedBy:[]});persistSettings();render();showToast('Eintrag hinzugefügt');});
+      document.querySelectorAll('[data-pack-view]').forEach(function(el){el.addEventListener('click',function(){state.packView=el.getAttribute('data-pack-view');render();});});
       document.querySelectorAll('[data-pack-confirm]').forEach(function(el){el.addEventListener('click',function(){
         var id=Number(el.getAttribute('data-pack-confirm'));
         var person=el.getAttribute('data-pack-person');
@@ -1499,8 +1531,18 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         var idx=x.confirmedBy.indexOf(person);
         if(idx===-1) x.confirmedBy.push(person); else x.confirmedBy.splice(idx,1);
         var allConfirmed = PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});
+        if(allConfirmed) syncPackingItemToChecklist(x);
         persistSettings();render();
-        if(allConfirmed) showToast('✅ Von allen bestätigt: '+x.text);
+        if(allConfirmed) showToast('✅ Von allen bestätigt: '+x.text+' · in Checkliste übernommen');
+      });});
+      document.querySelectorAll('[data-pack-alone]').forEach(function(el){el.addEventListener('click',function(){
+        var id=Number(el.getAttribute('data-pack-alone'));
+        var x=state.settings.packingEntries.find(function(i){return i.id===id;});
+        if(!x) return;
+        x.confirmedBy = PAYERS.slice();
+        syncPackingItemToChecklist(x);
+        persistSettings();render();
+        showToast('✅ Alleine erledigt: '+x.text+' · in Checkliste übernommen');
       });});
       document.querySelectorAll('[data-pack-del]').forEach(function(b){b.addEventListener('click',function(){if(confirm('Eintrag löschen?')){var id=Number(b.getAttribute('data-pack-del'));state.settings.packingEntries=state.settings.packingEntries.filter(function(i){return i.id!==id;});persistSettings();render();}});});
     }
