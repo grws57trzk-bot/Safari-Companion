@@ -599,7 +599,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   <header>
     <div class="eyebrow">Reisekasse</div>
     <h1 id="app-title">Namibia <em>&</em> Botswana</h1>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-U</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-V</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -1195,6 +1195,18 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     });
   }
 
+  function removePackingItemFromChecklist(item){
+    if(!Array.isArray(state.settings.checklistEntries)) return;
+    state.settings.checklistEntries = state.settings.checklistEntries.filter(function(c){return c.fromPacking!==item.id;});
+  }
+
+  function updateChecklistSyncFor(item){
+    var allConfirmed = PAYERS.every(function(p){return item.confirmedBy.indexOf(p)!==-1;});
+    if(allConfirmed) syncPackingItemToChecklist(item);
+    else removePackingItemFromChecklist(item);
+    return allConfirmed;
+  }
+
   function renderPacking(){
     var items=state.settings.packingEntries;
     items.forEach(function(x){ if(!Array.isArray(x.confirmedBy)) x.confirmedBy=[]; });
@@ -1530,21 +1542,29 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         if(!Array.isArray(x.confirmedBy)) x.confirmedBy=[];
         var idx=x.confirmedBy.indexOf(person);
         if(idx===-1) x.confirmedBy.push(person); else x.confirmedBy.splice(idx,1);
-        var allConfirmed = PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});
-        if(allConfirmed) syncPackingItemToChecklist(x);
+        var allConfirmed = updateChecklistSyncFor(x);
         persistSettings();render();
-        if(allConfirmed) showToast('✅ Von allen bestätigt: '+x.text+' · in Checkliste übernommen');
+        showToast(allConfirmed ? ('✅ Von allen bestätigt: '+x.text+' · in Checkliste übernommen') : ('Bestätigung zurückgenommen: '+x.text));
       });});
       document.querySelectorAll('[data-pack-alone]').forEach(function(el){el.addEventListener('click',function(){
         var id=Number(el.getAttribute('data-pack-alone'));
         var x=state.settings.packingEntries.find(function(i){return i.id===id;});
         if(!x) return;
-        x.confirmedBy = PAYERS.slice();
-        syncPackingItemToChecklist(x);
-        persistSettings();render();
-        showToast('✅ Alleine erledigt: '+x.text+' · in Checkliste übernommen');
+        if(!Array.isArray(x.confirmedBy)) x.confirmedBy=[];
+        var isFullyConfirmed = PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});
+        if(isFullyConfirmed){
+          x.confirmedBy = [];
+          updateChecklistSyncFor(x);
+          persistSettings();render();
+          showToast('Zurückgenommen: '+x.text);
+        } else {
+          x.confirmedBy = PAYERS.slice();
+          updateChecklistSyncFor(x);
+          persistSettings();render();
+          showToast('✅ Alleine erledigt: '+x.text+' · in Checkliste übernommen');
+        }
       });});
-      document.querySelectorAll('[data-pack-del]').forEach(function(b){b.addEventListener('click',function(){if(confirm('Eintrag löschen?')){var id=Number(b.getAttribute('data-pack-del'));state.settings.packingEntries=state.settings.packingEntries.filter(function(i){return i.id!==id;});persistSettings();render();}});});
+      document.querySelectorAll('[data-pack-del]').forEach(function(b){b.addEventListener('click',function(){if(confirm('Eintrag löschen?')){var id=Number(b.getAttribute('data-pack-del'));state.settings.packingEntries=state.settings.packingEntries.filter(function(i){return i.id!==id;});if(Array.isArray(state.settings.checklistEntries))state.settings.checklistEntries=state.settings.checklistEntries.filter(function(c){return c.fromPacking!==id;});persistSettings();render();}});});
     }
 
     if(state.tab==='checklist'){
