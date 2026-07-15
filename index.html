@@ -364,8 +364,10 @@
 
 
   .final-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(201,154,70,.14);border:1px solid var(--border-strong);color:var(--gold);border-radius:99px;padding:6px 10px;font-size:10px;font-family:'IBM Plex Mono',monospace;margin-bottom:10px}
-  .check-row{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--border)}
-  .check-row:last-child{border-bottom:none}.check-row.done .check-text{text-decoration:line-through;opacity:.55}
+  .check-row{display:flex;align-items:center;gap:10px;padding:14px 12px;margin-bottom:10px;border-radius:12px;background:rgba(255,252,245,.9)!important;border:1px solid rgba(201,154,70,.2)}
+  .card.list-transparent, div.list-transparent{background:transparent!important;box-shadow:none!important;border:none!important;padding-left:0!important;padding-right:0!important}
+  .check-row:last-child{margin-bottom:0}
+  .check-row.done .check-text{text-decoration:line-through;opacity:.55}
   .check-toggle{width:25px;height:25px;border-radius:8px;border:1px solid var(--border-strong);background:var(--bg-elev2);color:var(--gold);font-weight:700}
   .check-text{flex:1;font-size:13px}.check-cat{font-size:9px;color:var(--sand-dim);text-transform:uppercase;letter-spacing:.06em}
   .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
@@ -599,7 +601,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   <header>
     <div class="eyebrow">Reisekasse</div>
     <h1 id="app-title">Namibia <em>&</em> Botswana</h1>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-W</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AB</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -1224,7 +1226,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     html+='<button class="save-btn" id="pack-add">Hinzufügen</button></div>';
     ['Dokumente','Reisemedizin','Kleidung','Auto','Sonstiges'].forEach(function(cat){
       var list=items.filter(function(x){return x.category===cat;}); if(!list.length)return;
-      html+='<div class="section-title">'+cat+'</div><div class="card">';
+      html+='<div class="section-title">'+cat+'</div><div class="card list-transparent">';
       list.forEach(function(x){
         var confirmedCount = PAYERS.filter(function(p){return x.confirmedBy.indexOf(p)!==-1;}).length;
         var light = confirmedCount===0 ? 'red' : (confirmedCount<PAYERS.length ? 'yellow' : 'green');
@@ -1268,7 +1270,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     var cats=['Dokumente','Buchungen','Gepäck','Gesundheit','Technik','Fahrzeug','Sonstiges'];
     cats.forEach(function(cat){
       var list=items.filter(function(x){return x.category===cat;}); if(!list.length)return;
-      html+='<div class="section-title">'+cat+'</div><div class="card">';
+      html+='<div class="section-title">'+cat+'</div><div class="card list-transparent">';
       list.forEach(function(x){
         var confirmedCount = PAYERS.filter(function(p){return x.confirmedBy.indexOf(p)!==-1;}).length;
         var light = confirmedCount===0 ? 'red' : (confirmedCount<PAYERS.length ? 'yellow' : 'green');
