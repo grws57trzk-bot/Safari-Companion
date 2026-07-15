@@ -599,7 +599,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   <header>
     <div class="eyebrow">Reisekasse</div>
     <h1 id="app-title">Namibia <em>&</em> Botswana</h1>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-V</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-W</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -788,6 +788,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     histFilterType: 'all',
     packFilterPerson: 'alle',
     packView: 'alle',
+    checkView: 'alle',
     editingTripId: null,
     navEditOpen: false,
     participantsOpen: false,
@@ -1191,6 +1192,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       text: item.text,
       category: CHECKLIST_CAT_MAP[item.category] || 'Sonstiges',
       done: false,
+      confirmedBy: [],
       fromPacking: item.id
     });
   }
@@ -1253,11 +1255,45 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   }
 
   function renderChecklist(){
-    var items=state.settings.checklistEntries, done=items.filter(function(x){return x.done;}).length;
-    var html='<div class="section-title">Reise-Checkliste</div><div class="trip-hero"><h2>✅ Vorbereitung</h2><div class="route">'+done+' von '+items.length+' erledigt</div><div class="progress"><i style="width:'+(items.length?Math.round(done/items.length*100):0)+'%"></i></div></div>';
-    html+='<div class="card"><div class="fuel-grid"><div class="field"><label>Aufgabe</label><input id="check-text" type="text" placeholder="z. B. Reisepässe einpacken"></div><div class="field"><label>Kategorie</label><select id="check-cat"><option>Dokumente</option><option>Gepäck</option><option>Gesundheit</option><option>Technik</option><option>Fahrzeug</option><option>Buchungen</option><option>Sonstiges</option></select></div></div><button class="save-btn" id="check-add">Aufgabe hinzufügen</button></div>';
+    var items=state.settings.checklistEntries;
+    items.forEach(function(x){ if(!Array.isArray(x.confirmedBy)) x.confirmedBy = x.done ? PAYERS.slice() : []; });
+    var done=items.filter(function(x){return PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});}).length;
+    var view = state.checkView || 'alle';
+    var html='<div class="section-title">Reise-Checkliste</div><div class="trip-hero"><h2>✅ Vorbereitung</h2><div class="route">'+done+' von '+items.length+' von allen bestätigt eingepackt</div><div class="progress"><i style="width:'+(items.length?Math.round(done/items.length*100):0)+'%"></i></div></div>';
+    html+='<div class="section-title">Ansicht</div><div class="filters">';
+    html+='<span class="chip'+(view==='alle'?' active':'')+'" data-check-view="alle">Alle</span>';
+    PAYERS.forEach(function(p){html+='<span class="chip'+(view===p?' active':'')+'" data-check-view="'+escapeAttr(p)+'">'+escapeAttr(p)+'</span>';});
+    html+='</div>';
+    html+='<div class="section-title">Neue Aufgabe</div><div class="card"><div class="fuel-grid"><div class="field"><label>Aufgabe</label><input id="check-text" type="text" placeholder="z. B. Reisepässe einpacken"></div><div class="field"><label>Kategorie</label><select id="check-cat"><option>Dokumente</option><option>Gepäck</option><option>Gesundheit</option><option>Technik</option><option>Fahrzeug</option><option>Buchungen</option><option>Sonstiges</option></select></div></div><button class="save-btn" id="check-add">Aufgabe hinzufügen</button></div>';
     var cats=['Dokumente','Buchungen','Gepäck','Gesundheit','Technik','Fahrzeug','Sonstiges'];
-    cats.forEach(function(cat){var list=items.filter(function(x){return x.category===cat;});if(!list.length)return;html+='<div class="section-title">'+cat+'</div><div class="card">'+list.map(function(x){return '<div class="check-row '+(x.done?'done':'')+'"><button class="check-toggle" data-check-toggle="'+x.id+'">'+(x.done?'✓':'')+'</button><div class="check-text">'+escapeAttr(x.text)+'</div><button class="del-btn" data-check-del="'+x.id+'">✕</button></div>';}).join('')+'</div>';});
+    cats.forEach(function(cat){
+      var list=items.filter(function(x){return x.category===cat;}); if(!list.length)return;
+      html+='<div class="section-title">'+cat+'</div><div class="card">';
+      list.forEach(function(x){
+        var confirmedCount = PAYERS.filter(function(p){return x.confirmedBy.indexOf(p)!==-1;}).length;
+        var light = confirmedCount===0 ? 'red' : (confirmedCount<PAYERS.length ? 'yellow' : 'green');
+        var lightColor = light==='green' ? '#5fae6b' : (light==='yellow' ? '#e0b23c' : '#c15b4a');
+        html+='<div class="check-row '+(light==='green'?'done':'')+'" style="flex-direction:column;align-items:stretch;gap:8px">';
+        html+='<div style="display:flex;align-items:center;gap:10px">';
+        html+='<span style="width:12px;height:12px;border-radius:50%;background:'+lightColor+';flex-shrink:0;box-shadow:0 0 6px '+lightColor+'"></span>';
+        html+='<div class="check-text" style="flex:1;'+(light==='green'?'text-decoration:line-through;opacity:.7':'')+'">'+escapeAttr(x.text)+'</div>';
+        html+='<button class="del-btn" data-check-del="'+x.id+'" style="position:static">✕</button>';
+        html+='</div>';
+        html+='<div style="display:flex;gap:6px;flex-wrap:wrap;padding-left:22px">';
+        if(view==='alle'){
+          PAYERS.forEach(function(p){
+            var confirmed = x.confirmedBy.indexOf(p)!==-1;
+            html+='<span class="chip'+(confirmed?' active':'')+'" data-check-confirm="'+x.id+'" data-check-person="'+escapeAttr(p)+'" style="cursor:pointer">'+(confirmed?'✓ ':'○ ')+escapeAttr(p)+'</span>';
+          });
+        } else {
+          var myConfirmed = x.confirmedBy.indexOf(view)!==-1;
+          html+='<span class="chip'+(myConfirmed?' active':'')+'" data-check-confirm="'+x.id+'" data-check-person="'+escapeAttr(view)+'" style="cursor:pointer">'+(myConfirmed?'✓ Wirklich eingepackt':'○ Wirklich eingepackt')+'</span>';
+        }
+        html+='<span class="chip" data-check-alone="'+x.id+'" style="cursor:pointer;border-color:var(--gold);color:var(--gold)">👤 Alleine erledigt</span>';
+        html+='</div></div>';
+      });
+      html+='</div>';
+    });
     if(!items.length)html+='<div class="empty">Noch keine Aufgaben angelegt.</div>';
     return html;
   }
@@ -1568,8 +1604,31 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     }
 
     if(state.tab==='checklist'){
-      var ca=document.getElementById('check-add');if(ca)ca.addEventListener('click',function(){var t=document.getElementById('check-text').value.trim();if(!t)return;state.settings.checklistEntries.push({id:Date.now(),text:t,category:document.getElementById('check-cat').value,done:false});persistSettings();render();showToast('Aufgabe hinzugefügt');});
-      document.querySelectorAll('[data-check-toggle]').forEach(function(b){b.addEventListener('click',function(){var id=Number(b.getAttribute('data-check-toggle')),x=state.settings.checklistEntries.find(function(i){return i.id===id;});if(x)x.done=!x.done;persistSettings();render();});});
+      var ca=document.getElementById('check-add');if(ca)ca.addEventListener('click',function(){var t=document.getElementById('check-text').value.trim();if(!t)return;state.settings.checklistEntries.push({id:Date.now(),text:t,category:document.getElementById('check-cat').value,confirmedBy:[]});persistSettings();render();showToast('Aufgabe hinzugefügt');});
+      document.querySelectorAll('[data-check-view]').forEach(function(el){el.addEventListener('click',function(){state.checkView=el.getAttribute('data-check-view');render();});});
+      document.querySelectorAll('[data-check-confirm]').forEach(function(el){el.addEventListener('click',function(){
+        var id=Number(el.getAttribute('data-check-confirm'));
+        var person=el.getAttribute('data-check-person');
+        var x=state.settings.checklistEntries.find(function(i){return i.id===id;});
+        if(!x) return;
+        if(!Array.isArray(x.confirmedBy)) x.confirmedBy=[];
+        var idx=x.confirmedBy.indexOf(person);
+        if(idx===-1) x.confirmedBy.push(person); else x.confirmedBy.splice(idx,1);
+        x.done = PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});
+        persistSettings();render();
+        showToast(x.done ? ('✅ Von allen bestätigt: '+x.text) : ('Bestätigung zurückgenommen: '+x.text));
+      });});
+      document.querySelectorAll('[data-check-alone]').forEach(function(el){el.addEventListener('click',function(){
+        var id=Number(el.getAttribute('data-check-alone'));
+        var x=state.settings.checklistEntries.find(function(i){return i.id===id;});
+        if(!x) return;
+        if(!Array.isArray(x.confirmedBy)) x.confirmedBy=[];
+        var isFullyConfirmed = PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});
+        x.confirmedBy = isFullyConfirmed ? [] : PAYERS.slice();
+        x.done = !isFullyConfirmed;
+        persistSettings();render();
+        showToast(isFullyConfirmed ? ('Zurückgenommen: '+x.text) : ('✅ Alleine erledigt: '+x.text));
+      });});
       document.querySelectorAll('[data-check-del]').forEach(function(b){b.addEventListener('click',function(){var id=Number(b.getAttribute('data-check-del'));state.settings.checklistEntries=state.settings.checklistEntries.filter(function(i){return i.id!==id;});persistSettings();render();});});
     }
     if(state.tab==='stats'){
