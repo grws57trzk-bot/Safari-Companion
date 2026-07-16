@@ -617,7 +617,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       <button id="cloud-dot" title="Speicherstatus" style="width:13px;height:13px;border-radius:50%;border:none;padding:0;flex-shrink:0;background:#888;box-shadow:0 0 6px rgba(0,0,0,.3);margin-top:4px"></button>
     </div>
     <div id="cloud-dot-detail" style="display:none;font-family:monospace;font-size:11.5px;margin-top:6px;padding:8px 10px;border-radius:8px;word-break:break-word;"></div>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AG</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AH</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -810,6 +810,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     checkView: 'alle',
     editingTripId: null,
     editingInsuranceId: null,
+    expandedInsuranceIds: [],
     navEditOpen: false,
     participantsOpen: false,
     dangerZoneOpen: false,
@@ -1325,9 +1326,12 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   function renderInsurance(){
     var items=state.settings.insuranceEntries||[];
     var editEntry = state.editingInsuranceId ? items.find(function(e){return e.id===state.editingInsuranceId;}) : null;
+    var people=['Gemeinsam'].concat(PAYERS);
+    var expanded = state.expandedInsuranceIds || [];
     var html='<div class="section-title">Versicherungen</div><div class="trip-hero"><h2>🛡️ Versicherungen & Notfallkontakte</h2><div class="route">'+items.length+' hinterlegt</div></div>';
     html+='<div class="section-title">'+(editEntry?'Eintrag bearbeiten':'Neuer Eintrag')+'</div><div class="card">';
     html+='<div class="field"><label>Art der Versicherung</label><select id="ins-type">'+INSURANCE_TYPES.map(function(t){return '<option '+(editEntry&&editEntry.type===t?'selected':'')+'>'+t+'</option>';}).join('')+'</select></div>';
+    html+='<div class="field"><label>Für</label><select id="ins-person">'+people.map(function(p){return '<option value="'+escapeAttr(p)+'" '+(editEntry?(editEntry.person===p?'selected':''):(p==='Gemeinsam'?'selected':''))+'>'+escapeAttr(p)+'</option>';}).join('')+'</select></div>';
     html+='<div class="field"><label>Anbieter / Gesellschaft</label><input id="ins-provider" type="text" placeholder="z. B. HanseMerkur, ADAC …" value="'+(editEntry?escapeAttr(editEntry.provider||''):'')+'"></div>';
     html+='<div class="field"><label>Versicherungs-/Policennummer</label><input id="ins-number" type="text" placeholder="z. B. VS-123456789" value="'+(editEntry?escapeAttr(editEntry.number||''):'')+'"></div>';
     html+='<div class="field"><label>Notfallnummer</label><input id="ins-emergency" type="text" inputmode="tel" placeholder="z. B. +49 800 1234567" value="'+(editEntry?escapeAttr(editEntry.emergency||''):'')+'"></div>';
@@ -1339,18 +1343,27 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     html+='<div class="section-title">Hinterlegte Versicherungen</div>';
     if(!items.length) html+='<div class="empty">Noch keine Versicherungen hinterlegt.</div>';
     else html+='<div class="card">'+items.map(function(x){
-      return '<div class="check-row" style="flex-direction:column;align-items:stretch;gap:6px">'
-        +'<div style="display:flex;align-items:center;gap:10px">'
-        +'<div class="check-text" style="flex:1"><b>'+escapeAttr(x.type)+'</b>'+(x.provider?' · '+escapeAttr(x.provider):'')+'</div>'
-        +'<button class="del-btn" data-ins-edit="'+x.id+'" style="position:static;color:var(--gold)">✎</button>'
-        +'<button class="del-btn" data-ins-del="'+x.id+'" style="position:static">✕</button>'
-        +'</div>'
-        +'<div style="font-size:12.5px;color:var(--sand-dim);padding-left:2px">'
-        +(x.number?'Nr.: '+escapeAttr(x.number)+'<br>':'')
-        +(x.emergency?'📞 Notfall: '+escapeAttr(x.emergency)+'<br>':'')
-        +(x.contact?escapeAttr(x.contact)+'<br>':'')
-        +(x.note?escapeAttr(x.note):'')
-        +'</div></div>';
+      var isOpen = expanded.indexOf(x.id)!==-1;
+      var html2 = '<div class="check-row" style="flex-direction:column;align-items:stretch;gap:6px">'
+        +'<div style="display:flex;align-items:center;gap:10px;cursor:pointer" data-ins-toggle="'+x.id+'">'
+        +'<div class="check-text" style="flex:1"><b>'+escapeAttr(x.type)+'</b> · '+escapeAttr(x.person||'Gemeinsam')+'</div>'
+        +'<span style="color:var(--sand-dim);transition:transform .2s ease;'+(isOpen?'transform:rotate(180deg)':'')+'">▾</span>'
+        +'</div>';
+      if(isOpen){
+        html2 += '<div style="font-size:12.5px;color:var(--sand-dim);padding-left:2px">'
+          +(x.provider?'Anbieter: '+escapeAttr(x.provider)+'<br>':'')
+          +(x.number?'Nr.: '+escapeAttr(x.number)+'<br>':'')
+          +(x.emergency?'📞 Notfall: '+escapeAttr(x.emergency)+'<br>':'')
+          +(x.contact?escapeAttr(x.contact)+'<br>':'')
+          +(x.note?escapeAttr(x.note)+'<br>':'')
+          +'</div>'
+          +'<div style="display:flex;gap:8px;padding-top:2px">'
+          +'<button class="del-btn" data-ins-edit="'+x.id+'" style="position:static;color:var(--gold)">✎ Bearbeiten</button>'
+          +'<button class="del-btn" data-ins-del="'+x.id+'" style="position:static">✕ Löschen</button>'
+          +'</div>';
+      }
+      html2 += '</div>';
+      return html2;
     }).join('')+'</div>';
     return html;
   }
@@ -1801,6 +1814,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       if(insSave) insSave.addEventListener('click',function(){
         var vals={
           type: document.getElementById('ins-type').value,
+          person: document.getElementById('ins-person').value,
           provider: document.getElementById('ins-provider').value.trim(),
           number: document.getElementById('ins-number').value.trim(),
           emergency: document.getElementById('ins-emergency').value.trim(),
@@ -1820,11 +1834,23 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       });
       var insCancel=document.getElementById('ins-cancel');
       if(insCancel) insCancel.addEventListener('click',function(){ state.editingInsuranceId=null; render(); });
-      document.querySelectorAll('[data-ins-edit]').forEach(function(b){b.addEventListener('click',function(){
-        state.editingInsuranceId=Number(b.getAttribute('data-ins-edit'));
+      document.querySelectorAll('[data-ins-toggle]').forEach(function(el){el.addEventListener('click',function(){
+        var id=Number(el.getAttribute('data-ins-toggle'));
+        if(!Array.isArray(state.expandedInsuranceIds)) state.expandedInsuranceIds=[];
+        var idx=state.expandedInsuranceIds.indexOf(id);
+        if(idx===-1) state.expandedInsuranceIds.push(id); else state.expandedInsuranceIds.splice(idx,1);
         render();
       });});
-      document.querySelectorAll('[data-ins-del]').forEach(function(b){b.addEventListener('click',function(){
+      document.querySelectorAll('[data-ins-edit]').forEach(function(b){b.addEventListener('click',function(ev){
+        ev.stopPropagation();
+        var id=Number(b.getAttribute('data-ins-edit'));
+        state.editingInsuranceId=id;
+        if(!Array.isArray(state.expandedInsuranceIds)) state.expandedInsuranceIds=[];
+        if(state.expandedInsuranceIds.indexOf(id)===-1) state.expandedInsuranceIds.push(id);
+        render();
+      });});
+      document.querySelectorAll('[data-ins-del]').forEach(function(b){b.addEventListener('click',function(ev){
+        ev.stopPropagation();
         if(confirm('Diesen Versicherungseintrag löschen?')){
           var id=Number(b.getAttribute('data-ins-del'));
           state.settings.insuranceEntries=state.settings.insuranceEntries.filter(function(e){return e.id!==id;});
