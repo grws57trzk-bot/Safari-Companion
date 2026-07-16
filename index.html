@@ -227,6 +227,16 @@
     width:100%;background:var(--bg-elev2);border:1px solid var(--border-strong);
     color:var(--sand);border-radius:10px;padding:12px 12px;
     font-size:15px;font-family:'Inter',sans-serif;
+    -webkit-appearance:none;appearance:none;
+    box-sizing:border-box;
+  }
+  input[type="date"], input[type="time"]{
+    -webkit-appearance:none;appearance:none;
+    min-height:44px;
+  }
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value{
+    text-align:left;
   }
   .field input:focus, .field select:focus{outline:2px solid var(--gold);outline-offset:1px;}
   .field input::placeholder{color:var(--sand-dim);}
@@ -600,8 +610,12 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
 <div id="app">
   <header>
     <div class="eyebrow">Reisekasse</div>
-    <h1 id="app-title">Namibia <em>&</em> Botswana</h1>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AB</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <h1 id="app-title">Namibia <em>&</em> Botswana</h1>
+      <button id="cloud-dot" title="Speicherstatus" style="width:13px;height:13px;border-radius:50%;border:none;padding:0;flex-shrink:0;background:#888;box-shadow:0 0 6px rgba(0,0,0,.3);margin-top:4px"></button>
+    </div>
+    <div id="cloud-dot-detail" style="display:none;font-family:monospace;font-size:11.5px;margin-top:6px;padding:8px 10px;border-radius:8px;word-break:break-word;"></div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AD</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -1532,11 +1546,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     else if(state.tab==='fuel') html = renderFuel();
     else if(state.tab==='settings') html = renderSettings();
     else html = renderCustomTab(state.tab);
-    if(lastCloudError){
-      html = '<div style="background:#c0392b;color:#fff;padding:12px 14px;margin:8px 4px;border-radius:10px;font-family:monospace;font-size:13px;word-break:break-word;">☁️❌ CLOUD-FEHLER:<br>' + lastCloudError.replace(/</g,'&lt;') + '</div>' + html;
-    } else if(lastCloudSuccessAt){
-      html = '<div style="background:#27ae60;color:#fff;padding:8px 14px;margin:8px 4px;border-radius:10px;font-family:monospace;font-size:12px;">☁️✅ Zuletzt erfolgreich in Cloud gespeichert: ' + lastCloudSuccessAt + '</div>' + html;
-    }
+    updateCloudStatusDot();
     var prevScroll = main.scrollTop;
     var tabChanged = (state.tab !== lastRenderedTab);
     main.innerHTML = html;
@@ -1993,6 +2003,48 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       if(n) n.classList.add('nav-hidden');
     }, 3200);
   }
+
+  // ---------- Kleiner Speicherstatus-Punkt neben der Überschrift ----------
+  function updateCloudStatusDot(){
+    var dot = document.getElementById('cloud-dot');
+    if(!dot) return;
+    if(lastCloudError){
+      dot.style.background = '#c0392b';
+      dot.style.boxShadow = '0 0 8px rgba(192,57,43,.75)';
+    } else if(lastCloudSuccessAt){
+      dot.style.background = '#27ae60';
+      dot.style.boxShadow = '0 0 8px rgba(39,174,96,.75)';
+    } else {
+      dot.style.background = '#888';
+      dot.style.boxShadow = 'none';
+    }
+  }
+  (function initCloudDot(){
+    var dot = document.getElementById('cloud-dot');
+    var detail = document.getElementById('cloud-dot-detail');
+    if(!dot || !detail) return;
+    dot.addEventListener('click', function(){
+      if(detail.style.display === 'none' || !detail.style.display){
+        if(lastCloudError){
+          detail.style.background = 'rgba(192,57,43,.9)';
+          detail.style.color = '#fff';
+          detail.textContent = '☁️❌ ' + lastCloudError;
+        } else if(lastCloudSuccessAt){
+          detail.style.background = 'rgba(39,174,96,.9)';
+          detail.style.color = '#fff';
+          detail.textContent = '☁️✅ Zuletzt erfolgreich gespeichert: ' + lastCloudSuccessAt;
+        } else {
+          detail.style.background = 'rgba(120,120,120,.9)';
+          detail.style.color = '#fff';
+          detail.textContent = 'Noch kein Speichervorgang seit dem Öffnen der App.';
+        }
+        detail.style.display = 'block';
+      } else {
+        detail.style.display = 'none';
+      }
+    });
+  })();
+
   (function initDock(){
     var mainEl = document.getElementById('main');
     var handle = document.getElementById('nav-handle');
