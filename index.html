@@ -616,7 +616,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       <button id="cloud-dot" title="Speicherstatus" style="width:13px;height:13px;border-radius:50%;border:none;padding:0;flex-shrink:0;background:#888;box-shadow:0 0 6px rgba(0,0,0,.3);margin-top:4px"></button>
     </div>
     <div id="cloud-dot-detail" style="display:none;font-family:monospace;font-size:11.5px;margin-top:6px;padding:8px 10px;border-radius:8px;word-break:break-word;"></div>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AE</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AF</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -790,7 +790,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     trip:'<path d="M3 6l7-3 4 3 7-3v15l-7 3-4-3-7 3z"/><path d="M10 3v15M14 6v15"/>',
     wildlife:'<path d="M4 15c2-5 5-8 8-8s6 3 8 8"/><path d="M7 9L5 5M17 9l2-4"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/><path d="M10 18h4"/>',
     fuel:'<path d="M5 3h9v18H5z"/><path d="M7 7h5M14 8h2l3 3v7a2 2 0 01-4 0v-5"/><path d="M19 11l2-2"/>',
-    settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.6v.2h-4V21a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 00.3-1.9A1.7 1.7 0 003 14H2.8v-4H3a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 009 4.6 1.7 1.7 0 0010 3V2.8h4V3a1.7 1.7 0 001 1.6 1.7 1.7 0 001.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 00-.3 1.9 1.7 1.7 0 001.6 1h.2v4H21a1.7 1.7 0 00-1.6 1z"/>'
+    settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.6v.2h-4V21a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 00.3-1.9A1.7 1.7 0 003 14H2.8v-4H3a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 009 4.6 1.7 1.7 0 0010 3V2.8h4V3a1.7 1.7 0 001 1.6 1.7 1.7 0 001.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 00-.3 1.9 1.7 1.7 0 001.6 1h.2v4H21a1.7 1.7 0 00-1.6 1z"/>',
+    insurance:'<path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/>'
   };
 
   // ---------- State ----------
@@ -807,6 +808,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     packView: 'alle',
     checkView: 'alle',
     editingTripId: null,
+    editingInsuranceId: null,
     navEditOpen: false,
     participantsOpen: false,
     dangerZoneOpen: false,
@@ -825,7 +827,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       packingEntries: [],
       customTabs: [],
       hiddenTabs: [],
-      customEntries: {}
+      customEntries: {},
+      insuranceEntries: []
     }
   };
 
@@ -882,6 +885,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       if(!Array.isArray(state.settings.wildlifeEntries)) state.settings.wildlifeEntries=[];
       if(!Array.isArray(state.settings.itineraryEntries)) state.settings.itineraryEntries=[];
       if(!Array.isArray(state.settings.checklistEntries)) state.settings.checklistEntries=[];
+      if(!Array.isArray(state.settings.insuranceEntries)) state.settings.insuranceEntries=[];
       PAYERS = state.settings.payers.slice();
       ensureSharedPackingList();
     }catch(e){}
@@ -1281,8 +1285,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     html+='<span class="chip'+(view==='alle'?' active':'')+'" data-check-view="alle">Alle</span>';
     PAYERS.forEach(function(p){html+='<span class="chip'+(view===p?' active':'')+'" data-check-view="'+escapeAttr(p)+'">'+escapeAttr(p)+'</span>';});
     html+='</div>';
-    html+='<div class="section-title">Neue Aufgabe</div><div class="card"><div class="fuel-grid"><div class="field"><label>Aufgabe</label><input id="check-text" type="text" placeholder="z. B. Reisepässe einpacken"></div><div class="field"><label>Kategorie</label><select id="check-cat"><option>Dokumente</option><option>Gepäck</option><option>Gesundheit</option><option>Technik</option><option>Fahrzeug</option><option>Buchungen</option><option>Sonstiges</option></select></div></div><button class="save-btn" id="check-add">Aufgabe hinzufügen</button></div>';
-    var cats=['Dokumente','Buchungen','Gepäck','Gesundheit','Technik','Fahrzeug','Sonstiges'];
+    html+='<div class="section-title">Neue Aufgabe</div><div class="card"><div class="fuel-grid"><div class="field"><label>Aufgabe</label><input id="check-text" type="text" placeholder="z. B. Reisepässe einpacken"></div><div class="field"><label>Kategorie</label><select id="check-cat"><option>Dokumente</option><option>Gepäck</option><option>Gesundheit</option><option>Schutz vor Wildtieren</option><option>Technik</option><option>Fahrzeug</option><option>Buchungen</option><option>Sonstiges</option></select></div></div><button class="save-btn" id="check-add">Aufgabe hinzufügen</button></div>';
+    var cats=['Dokumente','Buchungen','Gepäck','Gesundheit','Schutz vor Wildtieren','Technik','Fahrzeug','Sonstiges'];
     cats.forEach(function(cat){
       var list=items.filter(function(x){return x.category===cat;}); if(!list.length)return;
       html+='<div class="section-title">'+cat+'</div><div class="card list-transparent">';
@@ -1312,6 +1316,41 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       html+='</div>';
     });
     if(!items.length)html+='<div class="empty">Noch keine Aufgaben angelegt.</div>';
+    return html;
+  }
+
+  var INSURANCE_TYPES = ['Reisekrankenversicherung','Reiserücktrittsversicherung','Auslandskrankenversicherung','Mietwagen-Zusatzversicherung','Gepäckversicherung','Unfallversicherung','Sonstiges'];
+
+  function renderInsurance(){
+    var items=state.settings.insuranceEntries||[];
+    var editEntry = state.editingInsuranceId ? items.find(function(e){return e.id===state.editingInsuranceId;}) : null;
+    var html='<div class="section-title">Versicherungen</div><div class="trip-hero"><h2>🛡️ Versicherungen & Notfallkontakte</h2><div class="route">'+items.length+' hinterlegt</div></div>';
+    html+='<div class="section-title">'+(editEntry?'Eintrag bearbeiten':'Neuer Eintrag')+'</div><div class="card">';
+    html+='<div class="field"><label>Art der Versicherung</label><select id="ins-type">'+INSURANCE_TYPES.map(function(t){return '<option '+(editEntry&&editEntry.type===t?'selected':'')+'>'+t+'</option>';}).join('')+'</select></div>';
+    html+='<div class="field"><label>Anbieter / Gesellschaft</label><input id="ins-provider" type="text" placeholder="z. B. HanseMerkur, ADAC …" value="'+(editEntry?escapeAttr(editEntry.provider||''):'')+'"></div>';
+    html+='<div class="field"><label>Versicherungs-/Policennummer</label><input id="ins-number" type="text" placeholder="z. B. VS-123456789" value="'+(editEntry?escapeAttr(editEntry.number||''):'')+'"></div>';
+    html+='<div class="field"><label>Notfallnummer</label><input id="ins-emergency" type="text" inputmode="tel" placeholder="z. B. +49 800 1234567" value="'+(editEntry?escapeAttr(editEntry.emergency||''):'')+'"></div>';
+    html+='<div class="field"><label>Weitere Kontaktdaten</label><input id="ins-contact" type="text" placeholder="E-Mail, Ansprechpartner, Adresse …" value="'+(editEntry?escapeAttr(editEntry.contact||''):'')+'"></div>';
+    html+='<div class="field"><label>Notiz</label><input id="ins-note" type="text" placeholder="Selbstbeteiligung, Gültigkeitszeitraum …" value="'+(editEntry?escapeAttr(editEntry.note||''):'')+'"></div>';
+    html+='<button class="save-btn" id="ins-save">'+(editEntry?'Änderung speichern':'Eintrag speichern')+'</button>';
+    if(editEntry) html+=' <button class="save-btn" id="ins-cancel" style="background:transparent;border:1px solid var(--border-strong);color:var(--sand-dim);margin-top:8px">Abbrechen</button>';
+    html+='</div>';
+    html+='<div class="section-title">Hinterlegte Versicherungen</div>';
+    if(!items.length) html+='<div class="empty">Noch keine Versicherungen hinterlegt.</div>';
+    else html+='<div class="card">'+items.map(function(x){
+      return '<div class="check-row" style="flex-direction:column;align-items:stretch;gap:6px">'
+        +'<div style="display:flex;align-items:center;gap:10px">'
+        +'<div class="check-text" style="flex:1"><b>'+escapeAttr(x.type)+'</b>'+(x.provider?' · '+escapeAttr(x.provider):'')+'</div>'
+        +'<button class="del-btn" data-ins-edit="'+x.id+'" style="position:static;color:var(--gold)">✎</button>'
+        +'<button class="del-btn" data-ins-del="'+x.id+'" style="position:static">✕</button>'
+        +'</div>'
+        +'<div style="font-size:12.5px;color:var(--sand-dim);padding-left:2px">'
+        +(x.number?'Nr.: '+escapeAttr(x.number)+'<br>':'')
+        +(x.emergency?'📞 Notfall: '+escapeAttr(x.emergency)+'<br>':'')
+        +(x.contact?escapeAttr(x.contact)+'<br>':'')
+        +(x.note?escapeAttr(x.note):'')
+        +'</div></div>';
+    }).join('')+'</div>';
     return html;
   }
 
@@ -1350,6 +1389,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     html+='<div class="field"><label>Titel</label><input id="trip-title" type="text" value="'+(editEntry?escapeAttr(editEntry.title):'')+'" placeholder="z. B. Sunbirds Lodge Chobe"></div>';
     html+='<div class="field"><label>Ort / Strecke</label><input id="trip-place" type="text" value="'+(editEntry?escapeAttr(editEntry.place||''):'')+'" placeholder="z. B. Kasane, Botswana"></div>';
     html+='<div class="field"><label>Notiz</label><input id="trip-note" type="text" value="'+(editEntry?escapeAttr(editEntry.note||''):'')+'" placeholder="Check-in, Buchungsnummer, Aktivität …"></div>';
+    html+='<div class="field"><label>Bestätigung (Foto/Dokument, optional)</label><div class="receipt-box"><button type="button" class="receipt-btn" id="trip-confirm-btn">📎 Bestätigung hinzufügen</button><input id="trip-confirm-input" type="file" accept="image/*"><div id="trip-confirm-preview">'+(editEntry&&editEntry.confirmation?'<div style="position:relative;margin-top:10px;"><img src="'+editEntry.confirmation+'" style="width:100%;max-height:220px;object-fit:contain;border-radius:9px;display:block"></div>':'')+'</div></div></div>';
     html+='<button class="save-btn" id="trip-save">'+(editEntry?'Änderung speichern':'Etappe speichern')+'</button>';
     if(editEntry) html+=' <button class="save-btn" id="trip-edit-cancel" style="background:transparent;border:1px solid var(--border-strong);color:var(--sand-dim);margin-top:8px">Abbrechen</button>';
     html+='</div>';
@@ -1358,7 +1398,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     else html+='<div class="card">'+entries.map(function(e){
       var d=new Date(e.date+'T00:00:00'),day=String(d.getDate()).padStart(2,'0'),mon=d.toLocaleDateString('de-DE',{month:'short'}).replace('.','');
       var dateLabel = (e.dateEnd && e.dateEnd !== e.date) ? (dayLabel(e.date)+' – '+dayLabel(e.dateEnd)) : dayLabel(e.date);
-      return '<div class="trip-entry"><div class="trip-date"><b>'+day+'</b><span>'+mon+'</span></div><div class="meta"><div class="desc">'+escapeAttr(e.type)+' · '+escapeAttr(e.title)+'</div><div class="sub">'+dateLabel+(e.place?' · '+escapeAttr(e.place):'')+(e.note?'<br>'+escapeAttr(e.note):'')+'</div></div><button class="del-btn" data-trip-edit="'+e.id+'" style="color:var(--gold)">✎</button><button class="del-btn" data-trip-del="'+e.id+'">✕</button></div>';
+      return '<div class="trip-entry"><div class="trip-date"><b>'+day+'</b><span>'+mon+'</span></div><div class="meta"><div class="desc">'+escapeAttr(e.type)+' · '+escapeAttr(e.title)+(e.confirmation?' · 📎':'')+'</div><div class="sub">'+dateLabel+(e.place?' · '+escapeAttr(e.place):'')+(e.note?'<br>'+escapeAttr(e.note):'')+'</div></div><button class="del-btn" data-trip-edit="'+e.id+'" style="color:var(--gold)">✎</button><button class="del-btn" data-trip-del="'+e.id+'">✕</button></div>';
     }).join('')+'</div>';
     return html;
   }
@@ -1481,6 +1521,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     { key:'trip', label:'Reise', icon:ICONS.trip },
     { key:'wildlife', label:'Safari', icon:ICONS.wildlife },
     { key:'fuel', label:'Tankbuch', icon:ICONS.fuel },
+    { key:'insurance', label:'Versicherungen', icon:ICONS.insurance },
     { key:'settings', label:'Personen', icon:ICONS.settings }
   ];
 
@@ -1546,6 +1587,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     else if(state.tab==='wildlife') html = renderWildlife();
     else if(state.tab==='fuel') html = renderFuel();
     else if(state.tab==='settings') html = renderSettings();
+    else if(state.tab==='insurance') html = renderInsurance();
     else html = renderCustomTab(state.tab);
     updateCloudStatusDot();
     var prevScroll = main.scrollTop;
@@ -1667,6 +1709,28 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         state.settings.tripEnd = endVal;
         persistSettings();render();showToast('Reisezeitraum gespeichert');
       });
+      var editEntryForConfirm = state.editingTripId ? state.settings.itineraryEntries.find(function(e){return e.id===state.editingTripId;}) : null;
+      var selectedTripConfirm = editEntryForConfirm ? (editEntryForConfirm.confirmation||null) : null;
+      var tripConfirmBtn=document.getElementById('trip-confirm-btn'), tripConfirmInput=document.getElementById('trip-confirm-input');
+      if(tripConfirmBtn&&tripConfirmInput) tripConfirmBtn.addEventListener('click',function(){tripConfirmInput.click();});
+      if(tripConfirmInput) tripConfirmInput.addEventListener('change',function(){
+        var file=tripConfirmInput.files[0];if(!file)return;
+        var r=new FileReader();
+        r.onload=function(ev){
+          var im=new Image();
+          im.onload=function(){
+            var max=1400,sc=Math.min(1,max/Math.max(im.width,im.height));
+            var c=document.createElement('canvas'); c.width=im.width*sc; c.height=im.height*sc;
+            c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+            selectedTripConfirm=c.toDataURL('image/jpeg',.75);
+            document.getElementById('trip-confirm-preview').innerHTML='<div style="position:relative;margin-top:10px;"><img src="'+selectedTripConfirm+'" style="width:100%;max-height:220px;object-fit:contain;border-radius:9px;display:block"><button type="button" id="trip-confirm-clear" style="position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:14px;">✕</button></div>';
+            var clr=document.getElementById('trip-confirm-clear');
+            if(clr) clr.addEventListener('click',function(){selectedTripConfirm=null;tripConfirmInput.value='';document.getElementById('trip-confirm-preview').innerHTML='';});
+          };
+          im.src=ev.target.result;
+        };
+        r.readAsDataURL(file);
+      });
       var ts=document.getElementById('trip-save');
       if(ts)ts.addEventListener('click',function(){
         var title=document.getElementById('trip-title').value.trim();
@@ -1675,7 +1739,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         var dEndEl=document.getElementById('trip-date-end');
         var dEnd=dEndEl.value || dStart;
         if(dEnd < dStart){ showToast('Enddatum liegt vor dem Startdatum'); dEndEl.style.borderColor='var(--red)'; return; }
-        var vals={date:dStart,dateEnd:dEnd,type:document.getElementById('trip-type').value,title:title,place:document.getElementById('trip-place').value.trim(),note:document.getElementById('trip-note').value.trim()};
+        var vals={date:dStart,dateEnd:dEnd,type:document.getElementById('trip-type').value,title:title,place:document.getElementById('trip-place').value.trim(),note:document.getElementById('trip-note').value.trim(),confirmation:selectedTripConfirm};
         if(state.editingTripId){
           var ex=state.settings.itineraryEntries.find(function(e){return e.id===state.editingTripId;});
           if(ex) Object.assign(ex,vals);
@@ -1729,6 +1793,43 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       document.querySelectorAll('[data-fuel-del]').forEach(function(btn){btn.addEventListener('click',function(){
         var id=Number(btn.getAttribute('data-fuel-del'));
         if(confirm('Diesen Tankvorgang löschen?')){state.settings.fuelEntries=state.settings.fuelEntries.filter(function(e){return e.id!==id;});persistSettings();render();}
+      });});
+    }
+    if(state.tab==='insurance'){
+      var insSave=document.getElementById('ins-save');
+      if(insSave) insSave.addEventListener('click',function(){
+        var vals={
+          type: document.getElementById('ins-type').value,
+          provider: document.getElementById('ins-provider').value.trim(),
+          number: document.getElementById('ins-number').value.trim(),
+          emergency: document.getElementById('ins-emergency').value.trim(),
+          contact: document.getElementById('ins-contact').value.trim(),
+          note: document.getElementById('ins-note').value.trim()
+        };
+        if(!Array.isArray(state.settings.insuranceEntries)) state.settings.insuranceEntries=[];
+        if(state.editingInsuranceId){
+          var ex=state.settings.insuranceEntries.find(function(e){return e.id===state.editingInsuranceId;});
+          if(ex) Object.assign(ex,vals);
+          state.editingInsuranceId=null;
+          persistSettings();render();showToast('Eintrag aktualisiert');
+        } else {
+          state.settings.insuranceEntries.push(Object.assign({id:Date.now()},vals));
+          persistSettings();render();showToast('Versicherung gespeichert');
+        }
+      });
+      var insCancel=document.getElementById('ins-cancel');
+      if(insCancel) insCancel.addEventListener('click',function(){ state.editingInsuranceId=null; render(); });
+      document.querySelectorAll('[data-ins-edit]').forEach(function(b){b.addEventListener('click',function(){
+        state.editingInsuranceId=Number(b.getAttribute('data-ins-edit'));
+        render();
+      });});
+      document.querySelectorAll('[data-ins-del]').forEach(function(b){b.addEventListener('click',function(){
+        if(confirm('Diesen Versicherungseintrag löschen?')){
+          var id=Number(b.getAttribute('data-ins-del'));
+          state.settings.insuranceEntries=state.settings.insuranceEntries.filter(function(e){return e.id!==id;});
+          if(state.editingInsuranceId===id) state.editingInsuranceId=null;
+          persistSettings();render();
+        }
       });});
     }
     if(state.tab==='settings'){
