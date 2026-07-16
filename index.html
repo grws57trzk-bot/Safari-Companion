@@ -2,7 +2,8 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style id="double-tap-reset-info">/* Doppeltipp-Zurücksetzen wird per JS unten realisiert, da CSS allein kein Zoom-Reset kann */</style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#171310">
@@ -616,7 +617,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       <button id="cloud-dot" title="Speicherstatus" style="width:13px;height:13px;border-radius:50%;border:none;padding:0;flex-shrink:0;background:#888;box-shadow:0 0 6px rgba(0,0,0,.3);margin-top:4px"></button>
     </div>
     <div id="cloud-dot-detail" style="display:none;font-family:monospace;font-size:11.5px;margin-top:6px;padding:8px 10px;border-radius:8px;word-break:break-word;"></div>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AF</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AG</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -2121,6 +2122,27 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       dot.style.boxShadow = 'none';
     }
   }
+  // ---------- Doppeltipp setzt Zoom wieder zurück ----------
+  (function initDoubleTapZoomReset(){
+    function resetZoom(){
+      var meta = document.querySelector('meta[name="viewport"]');
+      if(!meta) return;
+      var original = meta.getAttribute('content');
+      meta.setAttribute('content', original + ', maximum-scale=1.0');
+      setTimeout(function(){ meta.setAttribute('content', original); }, 350);
+    }
+    var lastTapTime = 0;
+    document.addEventListener('touchend', function(){
+      var now = Date.now();
+      if(now - lastTapTime < 300){
+        resetZoom();
+        lastTapTime = 0;
+      } else {
+        lastTapTime = now;
+      }
+    }, {passive:true});
+  })();
+
   (function initCloudDot(){
     var dot = document.getElementById('cloud-dot');
     var detail = document.getElementById('cloud-dot-detail');
