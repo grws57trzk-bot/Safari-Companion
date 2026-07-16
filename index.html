@@ -179,6 +179,7 @@
     flex-shrink:0;
   }
   .chip.active{border-color:var(--gold);color:var(--gold);background:rgba(201,154,70,0.10);}
+  .confirm-chip.active{border-color:#4f9c5c!important;color:#3d7a48!important;background:rgba(95,174,107,.22)!important;font-weight:600}
 
   .exp-item{
     display:flex;align-items:center;gap:12px;
@@ -615,7 +616,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       <button id="cloud-dot" title="Speicherstatus" style="width:13px;height:13px;border-radius:50%;border:none;padding:0;flex-shrink:0;background:#888;box-shadow:0 0 6px rgba(0,0,0,.3);margin-top:4px"></button>
     </div>
     <div id="cloud-dot-detail" style="display:none;font-family:monospace;font-size:11.5px;margin-top:6px;padding:8px 10px;border-radius:8px;word-break:break-word;"></div>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AD</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AE</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -1255,11 +1256,11 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         if(view==='alle'){
           PAYERS.forEach(function(p){
             var confirmed = x.confirmedBy.indexOf(p)!==-1;
-            html+='<span class="chip'+(confirmed?' active':'')+'" data-pack-confirm="'+x.id+'" data-pack-person="'+escapeAttr(p)+'" style="cursor:pointer">'+(confirmed?'✓ ':'○ ')+escapeAttr(p)+'</span>';
+            html+='<span class="chip confirm-chip'+(confirmed?' active':'')+'" data-pack-confirm="'+x.id+'" data-pack-person="'+escapeAttr(p)+'" style="cursor:pointer">'+(confirmed?'✓ ':'○ ')+escapeAttr(p)+'</span>';
           });
         } else {
           var myConfirmed = x.confirmedBy.indexOf(view)!==-1;
-          html+='<span class="chip'+(myConfirmed?' active':'')+'" data-pack-confirm="'+x.id+'" data-pack-person="'+escapeAttr(view)+'" style="cursor:pointer">'+(myConfirmed?'✓ Erledigt':'○ Erledigt')+'</span>';
+          html+='<span class="chip confirm-chip'+(myConfirmed?' active':'')+'" data-pack-confirm="'+x.id+'" data-pack-person="'+escapeAttr(view)+'" style="cursor:pointer">'+(myConfirmed?'✓ Erledigt':'○ Erledigt')+'</span>';
         }
         html+='<span class="chip" data-pack-alone="'+x.id+'" style="cursor:pointer;border-color:var(--gold);color:var(--gold)">👤 Alleine erledigt</span>';
         html+='</div></div>';
@@ -1299,11 +1300,11 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         if(view==='alle'){
           PAYERS.forEach(function(p){
             var confirmed = x.confirmedBy.indexOf(p)!==-1;
-            html+='<span class="chip'+(confirmed?' active':'')+'" data-check-confirm="'+x.id+'" data-check-person="'+escapeAttr(p)+'" style="cursor:pointer">'+(confirmed?'✓ ':'○ ')+escapeAttr(p)+'</span>';
+            html+='<span class="chip confirm-chip'+(confirmed?' active':'')+'" data-check-confirm="'+x.id+'" data-check-person="'+escapeAttr(p)+'" style="cursor:pointer">'+(confirmed?'✓ ':'○ ')+escapeAttr(p)+'</span>';
           });
         } else {
           var myConfirmed = x.confirmedBy.indexOf(view)!==-1;
-          html+='<span class="chip'+(myConfirmed?' active':'')+'" data-check-confirm="'+x.id+'" data-check-person="'+escapeAttr(view)+'" style="cursor:pointer">'+(myConfirmed?'✓ Wirklich eingepackt':'○ Wirklich eingepackt')+'</span>';
+          html+='<span class="chip confirm-chip'+(myConfirmed?' active':'')+'" data-check-confirm="'+x.id+'" data-check-person="'+escapeAttr(view)+'" style="cursor:pointer">'+(myConfirmed?'✓ Wirklich eingepackt':'○ Wirklich eingepackt')+'</span>';
         }
         html+='<span class="chip" data-check-alone="'+x.id+'" style="cursor:pointer;border-color:var(--gold);color:var(--gold)">👤 Alleine erledigt</span>';
         html+='</div></div>';
