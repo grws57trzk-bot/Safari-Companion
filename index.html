@@ -623,7 +623,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       <button id="cloud-dot" title="Speicherstatus" style="width:13px;height:13px;border-radius:50%;border:none;padding:0;flex-shrink:0;background:#888;box-shadow:0 0 6px rgba(0,0,0,.3);margin-top:4px"></button>
     </div>
     <div id="cloud-dot-detail" style="display:none;font-family:monospace;font-size:11.5px;margin-top:6px;padding:8px 10px;border-radius:8px;word-break:break-word;"></div>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AJ</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AK</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -819,6 +819,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     expandedInsuranceIds: [],
     fuelVehicleFilter: 'alle',
     vehiclesOpen: false,
+    editingChecklistId: null,
     navEditOpen: false,
     participantsOpen: false,
     dangerZoneOpen: false,
@@ -1297,7 +1298,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     html+='<span class="chip'+(view==='alle'?' active':'')+'" data-check-view="alle">Alle</span>';
     PAYERS.forEach(function(p){html+='<span class="chip'+(view===p?' active':'')+'" data-check-view="'+escapeAttr(p)+'">'+escapeAttr(p)+'</span>';});
     html+='</div>';
-    html+='<div class="section-title">Neue Aufgabe</div><div class="card"><div class="fuel-grid"><div class="field"><label>Aufgabe</label><input id="check-text" type="text" placeholder="z. B. Reisepässe einpacken"></div><div class="field"><label>Kategorie</label><select id="check-cat"><option>Dokumente</option><option>Gepäck</option><option>Gesundheit</option><option>Schutz vor Wildtieren</option><option>Technik</option><option>Fahrzeug</option><option>Buchungen</option><option>Sonstiges</option></select></div></div><button class="save-btn" id="check-add">Aufgabe hinzufügen</button></div>';
+    var editEntry = state.editingChecklistId ? items.find(function(e){return e.id===state.editingChecklistId;}) : null;
+    html+='<div class="section-title">'+(editEntry?'Aufgabe bearbeiten':'Neue Aufgabe')+'</div><div class="card"><div class="fuel-grid"><div class="field"><label>Aufgabe</label><input id="check-text" type="text" placeholder="z. B. Reisepässe einpacken" value="'+(editEntry?escapeAttr(editEntry.text):'')+'"></div><div class="field"><label>Kategorie</label><select id="check-cat"><option'+(editEntry&&editEntry.category==='Dokumente'?' selected':'')+'>Dokumente</option><option'+(editEntry&&editEntry.category==='Gepäck'?' selected':'')+'>Gepäck</option><option'+(editEntry&&editEntry.category==='Gesundheit'?' selected':'')+'>Gesundheit</option><option'+(editEntry&&editEntry.category==='Schutz vor Wildtieren'?' selected':'')+'>Schutz vor Wildtieren</option><option'+(editEntry&&editEntry.category==='Technik'?' selected':'')+'>Technik</option><option'+(editEntry&&editEntry.category==='Fahrzeug'?' selected':'')+'>Fahrzeug</option><option'+(editEntry&&editEntry.category==='Buchungen'?' selected':'')+'>Buchungen</option><option'+(editEntry&&editEntry.category==='Sonstiges'?' selected':'')+'>Sonstiges</option></select></div></div><button class="save-btn" id="check-add">'+(editEntry?'Änderung speichern':'Aufgabe hinzufügen')+'</button>'+(editEntry?' <button class="save-btn" id="check-cancel" style="background:transparent;border:1px solid var(--border-strong);color:var(--sand-dim);margin-top:8px">Abbrechen</button>':'')+'</div>';
     var cats=['Dokumente','Buchungen','Gepäck','Gesundheit','Schutz vor Wildtieren','Technik','Fahrzeug','Sonstiges'];
     cats.forEach(function(cat){
       var list=items.filter(function(x){return x.category===cat;}); if(!list.length)return;
@@ -1310,6 +1312,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         html+='<div style="display:flex;align-items:center;gap:10px">';
         html+='<span style="width:12px;height:12px;border-radius:50%;background:'+lightColor+';flex-shrink:0;box-shadow:0 0 6px '+lightColor+'"></span>';
         html+='<div class="check-text" style="flex:1;'+(light==='green'?'text-decoration:line-through;opacity:.7':'')+'">'+escapeAttr(x.text)+'</div>';
+        html+='<button class="del-btn" data-check-edit="'+x.id+'" style="position:static;color:var(--gold)">✎</button>';
         html+='<button class="del-btn" data-check-del="'+x.id+'" style="position:static">✕</button>';
         html+='</div>';
         html+='<div style="display:flex;gap:6px;flex-wrap:wrap;padding-left:22px">';
@@ -1705,7 +1708,25 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     }
 
     if(state.tab==='checklist'){
-      var ca=document.getElementById('check-add');if(ca)ca.addEventListener('click',function(){var t=document.getElementById('check-text').value.trim();if(!t)return;state.settings.checklistEntries.push({id:Date.now(),text:t,category:document.getElementById('check-cat').value,confirmedBy:[]});persistSettings();render();showToast('Aufgabe hinzugefügt');});
+      var ca=document.getElementById('check-add');if(ca)ca.addEventListener('click',function(){
+        var t=document.getElementById('check-text').value.trim();if(!t)return;
+        var cat=document.getElementById('check-cat').value;
+        if(state.editingChecklistId){
+          var ex=state.settings.checklistEntries.find(function(e){return e.id===state.editingChecklistId;});
+          if(ex){ ex.text=t; ex.category=cat; }
+          state.editingChecklistId=null;
+          persistSettings();render();showToast('Aufgabe aktualisiert');
+        } else {
+          state.settings.checklistEntries.push({id:Date.now(),text:t,category:cat,confirmedBy:[]});
+          persistSettings();render();showToast('Aufgabe hinzugefügt');
+        }
+      });
+      var checkCancel=document.getElementById('check-cancel');
+      if(checkCancel) checkCancel.addEventListener('click',function(){ state.editingChecklistId=null; render(); });
+      document.querySelectorAll('[data-check-edit]').forEach(function(b){b.addEventListener('click',function(){
+        state.editingChecklistId=Number(b.getAttribute('data-check-edit'));
+        render();
+      });});
       document.querySelectorAll('[data-check-view]').forEach(function(el){el.addEventListener('click',function(){state.checkView=el.getAttribute('data-check-view');render();});});
       document.querySelectorAll('[data-check-confirm]').forEach(function(el){el.addEventListener('click',function(){
         var id=Number(el.getAttribute('data-check-confirm'));
@@ -1730,7 +1751,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         persistSettings();render();
         showToast(isFullyConfirmed ? ('Zurückgenommen: '+x.text) : ('✅ Alleine erledigt: '+x.text));
       });});
-      document.querySelectorAll('[data-check-del]').forEach(function(b){b.addEventListener('click',function(){var id=Number(b.getAttribute('data-check-del'));state.settings.checklistEntries=state.settings.checklistEntries.filter(function(i){return i.id!==id;});persistSettings();render();});});
+      document.querySelectorAll('[data-check-del]').forEach(function(b){b.addEventListener('click',function(){var id=Number(b.getAttribute('data-check-del'));state.settings.checklistEntries=state.settings.checklistEntries.filter(function(i){return i.id!==id;});if(state.editingChecklistId===id)state.editingChecklistId=null;persistSettings();render();});});
     }
     if(state.tab==='stats'){
       var csv=document.getElementById('csv-export');if(csv)csv.addEventListener('click',exportCSV);
