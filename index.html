@@ -311,12 +311,18 @@
     transform:translateY(100%);
   }
   nav button{
-    flex:1;background:none;border:none;color:var(--sand-dim);
+    flex:1;background:none;border:2px solid transparent;color:var(--sand-dim);
     display:flex;flex-direction:column;align-items:center;gap:4px;
     padding:6px 2px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.03em;
+    border-radius:12px;
+    transition:border-color .15s ease, background .15s ease;
   }
   nav button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;}
-  nav button.active{color:var(--gold);}
+  nav button.active{
+    color:var(--gold);
+    border-color:var(--gold);
+    background:rgba(201,154,70,.14);
+  }
 
   #nav-handle{
     position:absolute;left:0;right:0;bottom:0;
@@ -617,7 +623,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       <button id="cloud-dot" title="Speicherstatus" style="width:13px;height:13px;border-radius:50%;border:none;padding:0;flex-shrink:0;background:#888;box-shadow:0 0 6px rgba(0,0,0,.3);margin-top:4px"></button>
     </div>
     <div id="cloud-dot-detail" style="display:none;font-family:monospace;font-size:11.5px;margin-top:6px;padding:8px 10px;border-radius:8px;word-break:break-word;"></div>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AI</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AJ</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -2281,6 +2287,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         state.pendingDelete = null;
         render();
         showNav();
+        setTimeout(function(){ if(window.keepActiveVisible) window.keepActiveVisible(); }, 50);
       }, {passive:true});
     }
     if(handle){
@@ -2479,6 +2486,7 @@ header div[style*="opacity:.6"]{
     var active=nav.querySelector('button.active');
     if(active) active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
   }
+  window.keepActiveVisible = keepActiveVisible;
   document.addEventListener('click',function(e){
     if(e.target.closest && e.target.closest('#nav button')) setTimeout(keepActiveVisible,50);
   });
