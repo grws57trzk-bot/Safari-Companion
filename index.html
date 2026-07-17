@@ -617,7 +617,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       <button id="cloud-dot" title="Speicherstatus" style="width:13px;height:13px;border-radius:50%;border:none;padding:0;flex-shrink:0;background:#888;box-shadow:0 0 6px rgba(0,0,0,.3);margin-top:4px"></button>
     </div>
     <div id="cloud-dot-detail" style="display:none;font-family:monospace;font-size:11.5px;margin-top:6px;padding:8px 10px;border-radius:8px;word-break:break-word;"></div>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AH</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AI</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -811,6 +811,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     editingTripId: null,
     editingInsuranceId: null,
     expandedInsuranceIds: [],
+    fuelVehicleFilter: 'alle',
+    vehiclesOpen: false,
     navEditOpen: false,
     participantsOpen: false,
     dangerZoneOpen: false,
@@ -822,6 +824,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       tripEnd: '2026-09-18',
       budgets: { EUR:0, NAD:0, BWP:0, USD:0 },
       payers: ['Dirk & Antje','Sven'],
+      vehicles: ['Fahrzeug 1','Fahrzeug 2'],
       fuelEntries: [],
       wildlifeEntries: [],
       itineraryEntries: [],
@@ -884,6 +887,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       state.settings.budgets = Object.assign({EUR:0,NAD:0,BWP:0,USD:0}, state.settings.budgets || {});
       if(!Array.isArray(state.settings.payers) || !state.settings.payers.length) state.settings.payers=['Dirk & Antje','Sven'];
       if(!Array.isArray(state.settings.fuelEntries)) state.settings.fuelEntries=[];
+      if(!Array.isArray(state.settings.vehicles) || !state.settings.vehicles.length) state.settings.vehicles=['Fahrzeug 1','Fahrzeug 2'];
       if(!Array.isArray(state.settings.wildlifeEntries)) state.settings.wildlifeEntries=[];
       if(!Array.isArray(state.settings.itineraryEntries)) state.settings.itineraryEntries=[];
       if(!Array.isArray(state.settings.checklistEntries)) state.settings.checklistEntries=[];
@@ -1446,29 +1450,51 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   }
 
   function renderFuel(){
-    var entries=state.settings.fuelEntries.slice().sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id;});
+    if(!Array.isArray(state.settings.vehicles) || !state.settings.vehicles.length) state.settings.vehicles=['Fahrzeug 1','Fahrzeug 2'];
+    var vehicles = state.settings.vehicles;
+    var filter = state.fuelVehicleFilter || 'alle';
+    var allEntries = state.settings.fuelEntries.slice();
+    allEntries.forEach(function(e){ if(!e.vehicle) e.vehicle = vehicles[0]; });
+    var entries = (filter==='alle' ? allEntries : allEntries.filter(function(e){return e.vehicle===filter;})).sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id;});
     var liters=0,cost=0,dist=0;
     entries.forEach(function(e){liters+=Number(e.liters)||0;cost+=Number(e.cost)||0;});
     var asc=entries.slice().sort(function(a,b){return a.odometer-b.odometer;});
     if(asc.length>1) dist=Math.max(0,Number(asc[asc.length-1].odometer)-Number(asc[0].odometer));
     var consumption=dist>0?liters/dist*100:0;
-    var html='<div class="section-title">Tankbuch</div><div class="fuel-stat">';
+    var html='<div class="section-title">Tankbuch</div>';
+    html+='<div class="filters">';
+    html+='<span class="chip'+(filter==='alle'?' active':'')+'" data-fuel-filter="alle">Alle Fahrzeuge</span>';
+    vehicles.forEach(function(v){html+='<span class="chip'+(filter===v?' active':'')+'" data-fuel-filter="'+escapeAttr(v)+'">'+escapeAttr(v)+'</span>';});
+    html+='</div>';
+    html+='<div class="fuel-stat">';
     html+='<div><b>'+liters.toLocaleString("de-DE",{maximumFractionDigits:1})+' l</b><span>Getankt</span></div>';
     html+='<div><b>'+cost.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+'</b><span>Gesamtkosten</span></div>';
     html+='<div><b>'+dist.toLocaleString("de-DE")+' km</b><span>Erfasste Strecke</span></div>';
     html+='<div><b>'+(consumption?consumption.toLocaleString("de-DE",{maximumFractionDigits:1})+' l':'—')+'</b><span>Ø je 100 km*</span></div></div>';
-    html+='<div class="card"><div class="fuel-grid">';
+    html+='<div class="card" id="vehicles-toggle" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">';
+    html+='<span style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">🚙</span><span>Fahrzeuge verwalten</span></span>';
+    html+='<span style="transition:transform .2s ease;'+(state.vehiclesOpen?'transform:rotate(180deg)':'')+'">▾</span></div>';
+    if(state.vehiclesOpen){
+      html+='<div class="card"><div id="vehicle-list">';
+      vehicles.forEach(function(v,i){
+        html+='<div class="participant-row"><input type="text" data-vehicle="'+i+'" value="'+escapeAttr(v)+'"><button type="button" data-remove-vehicle="'+i+'" '+(vehicles.length<=1?'disabled style="opacity:.35"':'')+'>✕</button></div>';
+      });
+      html+='</div><button class="tool-btn" id="add-vehicle" style="width:100%;margin-top:4px">＋ Fahrzeug hinzufügen</button>';
+      html+='<button class="save-btn" id="save-vehicles">Fahrzeuge speichern</button></div>';
+    }
+    html+='<div class="section-title">Neuer Tankvorgang</div><div class="card"><div class="fuel-grid">';
     html+='<div class="field"><label>Datum</label><input id="fuel-date" type="date" value="'+todayISO()+'"></div>';
     html+='<div class="field"><label>Kilometerstand</label><input id="fuel-km" type="number" inputmode="numeric" placeholder="z. B. 45200"></div>';
     html+='<div class="field"><label>Liter</label><input id="fuel-liters" type="number" inputmode="decimal" step="0.01" placeholder="0,00"></div>';
     html+='<div class="field"><label>Gesamtkosten</label><input id="fuel-cost" type="number" inputmode="decimal" step="0.01" placeholder="0,00"></div>';
     html+='<div class="field"><label>Währung</label><select id="fuel-cur">'+CURRENCIES.map(function(c){return '<option>'+c+'</option>';}).join('')+'</select></div>';
+    html+='<div class="field"><label>Fahrzeug</label><select id="fuel-vehicle">'+vehicles.map(function(v){return '<option '+(filter===v?'selected':'')+'>'+escapeAttr(v)+'</option>';}).join('')+'</select></div>';
     html+='<div class="field"><label>Ort / Tankstelle</label><input id="fuel-place" type="text" placeholder="optional"></div>';
     html+='</div><button class="save-btn" id="fuel-save">Tankvorgang speichern</button><div class="hint-box">* Der Durchschnitt ist eine Näherung aus allen erfassten Litern und der Differenz zwischen erstem und letztem Kilometerstand.</div></div>';
     html+='<div class="section-title">Tankverlauf</div>';
     if(!entries.length) html+='<div class="empty">Noch kein Tankvorgang erfasst.</div>';
     else html+='<div class="card">'+entries.map(function(e){
-      return '<div class="exp-item"><div class="stamp sm">⛽</div><div class="meta"><div class="desc">'+escapeAttr(e.place||'Tankstopp')+'</div><div class="sub">'+dayLabel(e.date)+' · '+Number(e.odometer).toLocaleString("de-DE")+' km · '+Number(e.liters).toLocaleString("de-DE",{maximumFractionDigits:2})+' l</div></div><div class="amt">'+fmt(e.cost,e.currency)+'</div><button class="del-btn" data-fuel-del="'+e.id+'">✕</button></div>';
+      return '<div class="exp-item"><div class="stamp sm">⛽</div><div class="meta"><div class="desc">'+escapeAttr(e.place||'Tankstopp')+(filter==='alle'?' · '+escapeAttr(e.vehicle):'')+'</div><div class="sub">'+dayLabel(e.date)+' · '+Number(e.odometer).toLocaleString("de-DE")+' km · '+Number(e.liters).toLocaleString("de-DE",{maximumFractionDigits:2})+' l</div></div><div class="amt">'+fmt(e.cost,e.currency)+'</div><button class="del-btn" data-fuel-del="'+e.id+'">✕</button></div>';
     }).join('')+'</div>';
     return html;
   }
@@ -1797,11 +1823,37 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       document.querySelectorAll('[data-wild-del]').forEach(function(b){b.addEventListener('click',function(){if(confirm('Diese Sichtung löschen?')){var id=Number(b.getAttribute('data-wild-del'));state.settings.wildlifeEntries=state.settings.wildlifeEntries.filter(function(e){return e.id!==id;});persistSettings();render();}});});
     }
     if(state.tab==='fuel'){
+      document.querySelectorAll('[data-fuel-filter]').forEach(function(el){el.addEventListener('click',function(){state.fuelVehicleFilter=el.getAttribute('data-fuel-filter');render();});});
+      var vehiclesToggle=document.getElementById('vehicles-toggle');
+      if(vehiclesToggle) vehiclesToggle.addEventListener('click',function(){ state.vehiclesOpen=!state.vehiclesOpen; render(); });
+      var addVeh=document.getElementById('add-vehicle');
+      if(addVeh) addVeh.addEventListener('click',function(){
+        state.settings.vehicles.push('Fahrzeug '+(state.settings.vehicles.length+1));
+        persistSettings();render();
+      });
+      document.querySelectorAll('[data-remove-vehicle]').forEach(function(b){b.addEventListener('click',function(){
+        if(state.settings.vehicles.length<=1) return;
+        var i=Number(b.getAttribute('data-remove-vehicle'));
+        state.settings.vehicles.splice(i,1);
+        persistSettings();render();
+      });});
+      var saveVeh=document.getElementById('save-vehicles');
+      if(saveVeh) saveVeh.addEventListener('click',function(){
+        var old=state.settings.vehicles.slice(), names=[];
+        document.querySelectorAll('[data-vehicle]').forEach(function(el){var n=el.value.trim();if(n)names.push(n);});
+        if(!names.length){alert('Bitte mindestens ein Fahrzeug eintragen.');return;}
+        old.forEach(function(o,i){if(names[i]&&o!==names[i]){
+          state.settings.fuelEntries.forEach(function(e){if(e.vehicle===o)e.vehicle=names[i];});
+          if(state.fuelVehicleFilter===o) state.fuelVehicleFilter=names[i];
+        }});
+        state.settings.vehicles=names;
+        persistSettings();render();showToast('Fahrzeuge gespeichert');
+      });
       var fuelSave=document.getElementById('fuel-save');
       if(fuelSave) fuelSave.addEventListener('click',function(){
         var km=Number(document.getElementById('fuel-km').value), liters=Number(document.getElementById('fuel-liters').value), cost=Number(document.getElementById('fuel-cost').value);
         if(km<=0||liters<=0||cost<0){alert('Bitte Kilometerstand und Liter korrekt eintragen.');return;}
-        state.settings.fuelEntries.push({id:Date.now(),date:document.getElementById('fuel-date').value,odometer:km,liters:liters,cost:cost,currency:document.getElementById('fuel-cur').value,place:document.getElementById('fuel-place').value.trim()});
+        state.settings.fuelEntries.push({id:Date.now(),date:document.getElementById('fuel-date').value,odometer:km,liters:liters,cost:cost,currency:document.getElementById('fuel-cur').value,vehicle:document.getElementById('fuel-vehicle').value,place:document.getElementById('fuel-place').value.trim()});
         persistSettings();render();showToast('Tankvorgang gespeichert');
       });
       document.querySelectorAll('[data-fuel-del]').forEach(function(btn){btn.addEventListener('click',function(){
@@ -2203,6 +2255,33 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       mainEl.addEventListener('touchstart', showNav, {passive:true});
       mainEl.addEventListener('scroll', showNav, {passive:true});
       mainEl.addEventListener('click', showNav);
+
+      // Wisch links/rechts wechselt zwischen den Kategorien in der Leiste
+      var swipeStartX = null, swipeStartY = null, swipeStartTime = 0;
+      mainEl.addEventListener('touchstart', function(ev){
+        var t = ev.touches[0];
+        swipeStartX = t.clientX; swipeStartY = t.clientY; swipeStartTime = Date.now();
+      }, {passive:true});
+      mainEl.addEventListener('touchend', function(ev){
+        if(swipeStartX===null) return;
+        var t = ev.changedTouches[0];
+        var dx = t.clientX - swipeStartX;
+        var dy = t.clientY - swipeStartY;
+        var dt = Date.now() - swipeStartTime;
+        swipeStartX = null;
+        if(dt > 700) return;
+        if(Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+        var tabs = getActiveTabs();
+        var idx = tabs.findIndex(function(t2){return t2.key===state.tab;});
+        if(idx===-1) return;
+        var nextIdx = dx < 0 ? idx+1 : idx-1;
+        if(nextIdx < 0 || nextIdx >= tabs.length) return;
+        state.tab = tabs[nextIdx].key;
+        if(state.tab==='form' && state.editingId===null) state.form = blankForm();
+        state.pendingDelete = null;
+        render();
+        showNav();
+      }, {passive:true});
     }
     if(handle){
       handle.addEventListener('click', showNav);
