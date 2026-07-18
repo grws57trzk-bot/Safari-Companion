@@ -623,7 +623,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       <button id="cloud-dot" title="Speicherstatus" style="width:13px;height:13px;border-radius:50%;border:none;padding:0;flex-shrink:0;background:#888;box-shadow:0 0 6px rgba(0,0,0,.3);margin-top:4px"></button>
     </div>
     <div id="cloud-dot-detail" style="display:none;font-family:monospace;font-size:11.5px;margin-top:6px;padding:8px 10px;border-radius:8px;word-break:break-word;"></div>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AK</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AL</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -820,6 +820,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     fuelVehicleFilter: 'alle',
     vehiclesOpen: false,
     editingChecklistId: null,
+    packAloneSelecting: null,
     navEditOpen: false,
     participantsOpen: false,
     dangerZoneOpen: false,
@@ -1219,14 +1220,18 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
 
   function syncPackingItemToChecklist(item){
     if(!Array.isArray(state.settings.checklistEntries)) state.settings.checklistEntries=[];
-    var already = state.settings.checklistEntries.some(function(c){return c.fromPacking===item.id;});
-    if(already) return;
+    var existing = state.settings.checklistEntries.find(function(c){return c.fromPacking===item.id;});
+    if(existing){
+      existing.soloBy = item.soloBy || null;
+      return;
+    }
     state.settings.checklistEntries.push({
       id: Date.now()+Math.floor(Math.random()*1000),
       text: item.text,
       category: CHECKLIST_CAT_MAP[item.category] || 'Sonstiges',
       done: false,
       confirmedBy: [],
+      soloBy: item.soloBy || null,
       fromPacking: item.id
     });
   }
@@ -1237,7 +1242,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   }
 
   function updateChecklistSyncFor(item){
-    var allConfirmed = PAYERS.every(function(p){return item.confirmedBy.indexOf(p)!==-1;});
+    var allConfirmed = !!item.soloBy || PAYERS.every(function(p){return item.confirmedBy.indexOf(p)!==-1;});
     if(allConfirmed) syncPackingItemToChecklist(item);
     else removePackingItemFromChecklist(item);
     return allConfirmed;
@@ -1246,7 +1251,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   function renderPacking(){
     var items=state.settings.packingEntries;
     items.forEach(function(x){ if(!Array.isArray(x.confirmedBy)) x.confirmedBy=[]; });
-    var done=items.filter(function(x){return PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});}).length;
+    var done=items.filter(function(x){return x.soloBy || PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});}).length;
     var view = state.packView || 'alle';
     var html='<div class="section-title">Safari-Packliste</div><div class="trip-hero"><h2>🎒 Packliste</h2><div class="route">'+done+' von '+items.length+' von allen bestätigt</div><div class="progress"><i style="width:'+(items.length?Math.round(done/items.length*100):0)+'%"></i></div></div>';
     html+='<div class="section-title">Ansicht</div><div class="filters">';
@@ -1261,7 +1266,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       html+='<div class="section-title">'+cat+'</div><div class="card list-transparent">';
       list.forEach(function(x){
         var confirmedCount = PAYERS.filter(function(p){return x.confirmedBy.indexOf(p)!==-1;}).length;
-        var light = confirmedCount===0 ? 'red' : (confirmedCount<PAYERS.length ? 'yellow' : 'green');
+        var isSolo = !!x.soloBy;
+        var light = isSolo ? 'green' : (confirmedCount===0 ? 'red' : (confirmedCount<PAYERS.length ? 'yellow' : 'green'));
         var lightColor = light==='green' ? '#5fae6b' : (light==='yellow' ? '#e0b23c' : '#c15b4a');
         html+='<div class="check-row '+(light==='green'?'done':'')+'" style="flex-direction:column;align-items:stretch;gap:8px">';
         html+='<div style="display:flex;align-items:center;gap:10px">';
@@ -1270,16 +1276,27 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         html+='<button class="del-btn" data-pack-del="'+x.id+'" style="position:static">✕</button>';
         html+='</div>';
         html+='<div style="display:flex;gap:6px;flex-wrap:wrap;padding-left:22px">';
-        if(view==='alle'){
+        if(isSolo){
+          html+='<span class="chip confirm-chip active" style="cursor:default">👤 '+escapeAttr(x.soloBy)+' hat es allein erledigt</span>';
+          html+='<span class="chip" data-pack-alone="'+x.id+'" style="cursor:pointer;border-color:var(--gold);color:var(--gold)">Zurücknehmen</span>';
+        } else if(state.packAloneSelecting===x.id){
+          html+='<span style="width:100%;font-size:11.5px;color:var(--sand-dim)">Wer hat es allein erledigt?</span>';
           PAYERS.forEach(function(p){
-            var confirmed = x.confirmedBy.indexOf(p)!==-1;
-            html+='<span class="chip confirm-chip'+(confirmed?' active':'')+'" data-pack-confirm="'+x.id+'" data-pack-person="'+escapeAttr(p)+'" style="cursor:pointer">'+(confirmed?'✓ ':'○ ')+escapeAttr(p)+'</span>';
+            html+='<span class="chip" data-pack-alone-confirm="'+x.id+'" data-pack-alone-person="'+escapeAttr(p)+'" style="cursor:pointer;border-color:var(--gold);color:var(--gold)">'+escapeAttr(p)+'</span>';
           });
+          html+='<span class="chip" data-pack-alone-cancel="'+x.id+'" style="cursor:pointer">Abbrechen</span>';
         } else {
-          var myConfirmed = x.confirmedBy.indexOf(view)!==-1;
-          html+='<span class="chip confirm-chip'+(myConfirmed?' active':'')+'" data-pack-confirm="'+x.id+'" data-pack-person="'+escapeAttr(view)+'" style="cursor:pointer">'+(myConfirmed?'✓ Erledigt':'○ Erledigt')+'</span>';
+          if(view==='alle'){
+            PAYERS.forEach(function(p){
+              var confirmed = x.confirmedBy.indexOf(p)!==-1;
+              html+='<span class="chip confirm-chip'+(confirmed?' active':'')+'" data-pack-confirm="'+x.id+'" data-pack-person="'+escapeAttr(p)+'" style="cursor:pointer">'+(confirmed?'✓ ':'○ ')+escapeAttr(p)+'</span>';
+            });
+          } else {
+            var myConfirmed = x.confirmedBy.indexOf(view)!==-1;
+            html+='<span class="chip confirm-chip'+(myConfirmed?' active':'')+'" data-pack-confirm="'+x.id+'" data-pack-person="'+escapeAttr(view)+'" style="cursor:pointer">'+(myConfirmed?'✓ Erledigt':'○ Erledigt')+'</span>';
+          }
+          html+='<span class="chip" data-pack-alone="'+x.id+'" style="cursor:pointer;border-color:var(--gold);color:var(--gold)">👤 Alleine erledigt</span>';
         }
-        html+='<span class="chip" data-pack-alone="'+x.id+'" style="cursor:pointer;border-color:var(--gold);color:var(--gold)">👤 Alleine erledigt</span>';
         html+='</div></div>';
       });
       html+='</div>';
@@ -1291,7 +1308,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   function renderChecklist(){
     var items=state.settings.checklistEntries;
     items.forEach(function(x){ if(!Array.isArray(x.confirmedBy)) x.confirmedBy = x.done ? PAYERS.slice() : []; });
-    var done=items.filter(function(x){return PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});}).length;
+    var done=items.filter(function(x){return x.soloBy ? x.confirmedBy.indexOf(x.soloBy)!==-1 : PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});}).length;
     var view = state.checkView || 'alle';
     var html='<div class="section-title">Reise-Checkliste</div><div class="trip-hero"><h2>✅ Vorbereitung</h2><div class="route">'+done+' von '+items.length+' von allen bestätigt eingepackt</div><div class="progress"><i style="width:'+(items.length?Math.round(done/items.length*100):0)+'%"></i></div></div>';
     html+='<div class="section-title">Ansicht</div><div class="filters">';
@@ -1305,18 +1322,22 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       var list=items.filter(function(x){return x.category===cat;}); if(!list.length)return;
       html+='<div class="section-title">'+cat+'</div><div class="card list-transparent">';
       list.forEach(function(x){
+        var isSolo = !!x.soloBy;
         var confirmedCount = PAYERS.filter(function(p){return x.confirmedBy.indexOf(p)!==-1;}).length;
-        var light = confirmedCount===0 ? 'red' : (confirmedCount<PAYERS.length ? 'yellow' : 'green');
+        var light = isSolo ? (x.confirmedBy.indexOf(x.soloBy)!==-1 ? 'green' : 'red') : (confirmedCount===0 ? 'red' : (confirmedCount<PAYERS.length ? 'yellow' : 'green'));
         var lightColor = light==='green' ? '#5fae6b' : (light==='yellow' ? '#e0b23c' : '#c15b4a');
         html+='<div class="check-row '+(light==='green'?'done':'')+'" style="flex-direction:column;align-items:stretch;gap:8px">';
         html+='<div style="display:flex;align-items:center;gap:10px">';
         html+='<span style="width:12px;height:12px;border-radius:50%;background:'+lightColor+';flex-shrink:0;box-shadow:0 0 6px '+lightColor+'"></span>';
-        html+='<div class="check-text" style="flex:1;'+(light==='green'?'text-decoration:line-through;opacity:.7':'')+'">'+escapeAttr(x.text)+'</div>';
+        html+='<div class="check-text" style="flex:1;'+(light==='green'?'text-decoration:line-through;opacity:.7':'')+'">'+escapeAttr(x.text)+(isSolo?' <span style="color:var(--gold-dim);font-size:11px">· '+escapeAttr(x.soloBy)+'</span>':'')+'</div>';
         html+='<button class="del-btn" data-check-edit="'+x.id+'" style="position:static;color:var(--gold)">✎</button>';
         html+='<button class="del-btn" data-check-del="'+x.id+'" style="position:static">✕</button>';
         html+='</div>';
         html+='<div style="display:flex;gap:6px;flex-wrap:wrap;padding-left:22px">';
-        if(view==='alle'){
+        if(isSolo){
+          var soloConfirmed = x.confirmedBy.indexOf(x.soloBy)!==-1;
+          html+='<span class="chip confirm-chip'+(soloConfirmed?' active':'')+'" data-check-confirm="'+x.id+'" data-check-person="'+escapeAttr(x.soloBy)+'" style="cursor:pointer">'+(soloConfirmed?'✓ ':'○ ')+escapeAttr(x.soloBy)+' hat es wirklich eingepackt</span>';
+        } else if(view==='alle'){
           PAYERS.forEach(function(p){
             var confirmed = x.confirmedBy.indexOf(p)!==-1;
             html+='<span class="chip confirm-chip'+(confirmed?' active':'')+'" data-check-confirm="'+x.id+'" data-check-person="'+escapeAttr(p)+'" style="cursor:pointer">'+(confirmed?'✓ ':'○ ')+escapeAttr(p)+'</span>';
@@ -1325,7 +1346,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
           var myConfirmed = x.confirmedBy.indexOf(view)!==-1;
           html+='<span class="chip confirm-chip'+(myConfirmed?' active':'')+'" data-check-confirm="'+x.id+'" data-check-person="'+escapeAttr(view)+'" style="cursor:pointer">'+(myConfirmed?'✓ Wirklich eingepackt':'○ Wirklich eingepackt')+'</span>';
         }
-        html+='<span class="chip" data-check-alone="'+x.id+'" style="cursor:pointer;border-color:var(--gold);color:var(--gold)">👤 Alleine erledigt</span>';
+        if(!isSolo) html+='<span class="chip" data-check-alone="'+x.id+'" style="cursor:pointer;border-color:var(--gold);color:var(--gold)">👤 Alleine erledigt</span>';
         html+='</div></div>';
       });
       html+='</div>';
@@ -1690,19 +1711,32 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         var id=Number(el.getAttribute('data-pack-alone'));
         var x=state.settings.packingEntries.find(function(i){return i.id===id;});
         if(!x) return;
-        if(!Array.isArray(x.confirmedBy)) x.confirmedBy=[];
-        var isFullyConfirmed = PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});
-        if(isFullyConfirmed){
-          x.confirmedBy = [];
+        if(x.soloBy){
+          x.soloBy=null;
+          x.confirmedBy=[];
           updateChecklistSyncFor(x);
           persistSettings();render();
           showToast('Zurückgenommen: '+x.text);
         } else {
-          x.confirmedBy = PAYERS.slice();
-          updateChecklistSyncFor(x);
-          persistSettings();render();
-          showToast('✅ Alleine erledigt: '+x.text+' · in Checkliste übernommen');
+          state.packAloneSelecting = id;
+          render();
         }
+      });});
+      document.querySelectorAll('[data-pack-alone-cancel]').forEach(function(el){el.addEventListener('click',function(){
+        state.packAloneSelecting = null;
+        render();
+      });});
+      document.querySelectorAll('[data-pack-alone-confirm]').forEach(function(el){el.addEventListener('click',function(){
+        var id=Number(el.getAttribute('data-pack-alone-confirm'));
+        var person=el.getAttribute('data-pack-alone-person');
+        var x=state.settings.packingEntries.find(function(i){return i.id===id;});
+        if(!x) return;
+        x.soloBy = person;
+        x.confirmedBy = [person];
+        state.packAloneSelecting = null;
+        updateChecklistSyncFor(x);
+        persistSettings();render();
+        showToast('✅ '+person+' hat es allein erledigt: '+x.text+' · in Checkliste übernommen');
       });});
       document.querySelectorAll('[data-pack-del]').forEach(function(b){b.addEventListener('click',function(){if(confirm('Eintrag löschen?')){var id=Number(b.getAttribute('data-pack-del'));state.settings.packingEntries=state.settings.packingEntries.filter(function(i){return i.id!==id;});if(Array.isArray(state.settings.checklistEntries))state.settings.checklistEntries=state.settings.checklistEntries.filter(function(c){return c.fromPacking!==id;});persistSettings();render();}});});
     }
@@ -1736,9 +1770,9 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         if(!Array.isArray(x.confirmedBy)) x.confirmedBy=[];
         var idx=x.confirmedBy.indexOf(person);
         if(idx===-1) x.confirmedBy.push(person); else x.confirmedBy.splice(idx,1);
-        x.done = PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});
+        x.done = x.soloBy ? x.confirmedBy.indexOf(x.soloBy)!==-1 : PAYERS.every(function(p){return x.confirmedBy.indexOf(p)!==-1;});
         persistSettings();render();
-        showToast(x.done ? ('✅ Von allen bestätigt: '+x.text) : ('Bestätigung zurückgenommen: '+x.text));
+        showToast(x.done ? ('✅ Eingepackt bestätigt: '+x.text) : ('Bestätigung zurückgenommen: '+x.text));
       });});
       document.querySelectorAll('[data-check-alone]').forEach(function(el){el.addEventListener('click',function(){
         var id=Number(el.getAttribute('data-check-alone'));
