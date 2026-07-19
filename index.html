@@ -623,7 +623,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       <button id="cloud-dot" title="Speicherstatus" style="width:13px;height:13px;border-radius:50%;border:none;padding:0;flex-shrink:0;background:#888;box-shadow:0 0 6px rgba(0,0,0,.3);margin-top:4px"></button>
     </div>
     <div id="cloud-dot-detail" style="display:none;font-family:monospace;font-size:11.5px;margin-top:6px;padding:8px 10px;border-radius:8px;word-break:break-word;"></div>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AL</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AM</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -798,7 +798,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     wildlife:'<path d="M4 15c2-5 5-8 8-8s6 3 8 8"/><path d="M7 9L5 5M17 9l2-4"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/><path d="M10 18h4"/>',
     fuel:'<path d="M5 3h9v18H5z"/><path d="M7 7h5M14 8h2l3 3v7a2 2 0 01-4 0v-5"/><path d="M19 11l2-2"/>',
     settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.6v.2h-4V21a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 00.3-1.9A1.7 1.7 0 003 14H2.8v-4H3a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 009 4.6 1.7 1.7 0 0010 3V2.8h4V3a1.7 1.7 0 001 1.6 1.7 1.7 0 001.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 00-.3 1.9 1.7 1.7 0 001.6 1h.2v4H21a1.7 1.7 0 00-1.6 1z"/>',
-    insurance:'<path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/>'
+    insurance:'<path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/>',
+    emergency:'<path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6 19.8 19.8 0 01-3.1-8.7A2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .3 2 .6 2.9a2 2 0 01-.5 2.1L7.9 10a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.5c.9.3 1.9.5 2.9.6a2 2 0 011.8 2.1z"/>'
   };
 
   // ---------- State ----------
@@ -816,6 +817,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     checkView: 'alle',
     editingTripId: null,
     editingInsuranceId: null,
+    editingEmergencyId: null,
     expandedInsuranceIds: [],
     fuelVehicleFilter: 'alle',
     vehiclesOpen: false,
@@ -841,7 +843,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       customTabs: [],
       hiddenTabs: [],
       customEntries: {},
-      insuranceEntries: []
+      insuranceEntries: [],
+      emergencyContacts: []
     }
   };
 
@@ -900,6 +903,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       if(!Array.isArray(state.settings.itineraryEntries)) state.settings.itineraryEntries=[];
       if(!Array.isArray(state.settings.checklistEntries)) state.settings.checklistEntries=[];
       if(!Array.isArray(state.settings.insuranceEntries)) state.settings.insuranceEntries=[];
+      if(!Array.isArray(state.settings.emergencyContacts)) state.settings.emergencyContacts=[];
       PAYERS = state.settings.payers.slice();
       ensureSharedPackingList();
     }catch(e){}
@@ -1357,6 +1361,67 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
 
   var INSURANCE_TYPES = ['Reisekrankenversicherung','Reiserücktrittsversicherung','Auslandskrankenversicherung','Mietwagen-Zusatzversicherung','Gepäckversicherung','Unfallversicherung','Sonstiges'];
 
+  var EMBASSY_CONTACTS = [
+    {
+      name: 'Deutsche Botschaft Windhoek (Namibia)',
+      address: 'Sanlam|Allianz Centre, 6. Etage, Independence Ave 145, Windhoek, Namibia (Postanschrift: P.O. Box 231, Windhoek)',
+      phone: '+264 61 273 100',
+      emergency: '+264 81 124 3572',
+      note: 'Notfalldienst: werktags ab Dienstschluss bis 22 Uhr, an Wochenenden/Feiertagen 8–22 Uhr. Nur für echte Notfälle deutscher Staatsangehöriger.'
+    },
+    {
+      name: 'Deutsche Botschaft Gaborone (Botswana)',
+      address: 'Queens Road 1079–1084, Gaborone (Main Mall), Botswana (Postanschrift: P.O. Box 315, Gaborone)',
+      phone: '+267 395 3143',
+      emergency: '+267 71 300 139',
+      note: 'Öffnungszeiten Mo–Fr 9–12 Uhr. Notfallnummer nur für echte Notfälle (keine Visa-Anfragen).'
+    }
+  ];
+
+  function renderEmergency(){
+    var items = state.settings.emergencyContacts || [];
+    var editEntry = state.editingEmergencyId ? items.find(function(e){return e.id===state.editingEmergencyId;}) : null;
+    var html = '<div class="section-title">Notfallkontakte</div><div class="trip-hero"><h2>🚨 Notfallkontakte</h2><div class="route">Botschaften & eigene Kontakte</div></div>';
+    html += '<div class="section-title">Deutsche Botschaften vor Ort</div>';
+    html += '<div class="card" style="border:1.5px solid #c15b4a;background:rgba(193,91,74,.10)">';
+    EMBASSY_CONTACTS.forEach(function(e,i){
+      html += '<div style="padding:'+(i>0?'14px 0 0':'0')+' '+(i<EMBASSY_CONTACTS.length-1?'0 14px':'0')+';'+(i<EMBASSY_CONTACTS.length-1?'border-bottom:1px solid rgba(193,91,74,.25);margin-bottom:14px':'')+'">';
+      html += '<div style="font-weight:700;color:#c15b4a;margin-bottom:4px">🇩🇪 '+escapeAttr(e.name)+'</div>';
+      html += '<div style="font-size:12.5px;color:var(--sand-dim);line-height:1.5">'
+        +'📍 '+escapeAttr(e.address)+'<br>'
+        +'☎️ '+escapeAttr(e.phone)+'<br>'
+        +'🚨 Notfall: <b style="color:#c15b4a">'+escapeAttr(e.emergency)+'</b><br>'
+        +'<span style="font-size:11.5px">'+escapeAttr(e.note)+'</span>'
+        +'</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div class="section-title">'+(editEntry?'Kontakt bearbeiten':'Eigenen Kontakt hinzufügen')+'</div><div class="card">';
+    html += '<div class="field"><label>Name / Bezeichnung</label><input id="em-name" type="text" placeholder="z. B. Lodge-Rezeption, Hausarzt, Reiseleiter …" value="'+(editEntry?escapeAttr(editEntry.name):'')+'"></div>';
+    html += '<div class="field"><label>Telefonnummer</label><input id="em-phone" type="text" inputmode="tel" placeholder="z. B. +264 …" value="'+(editEntry?escapeAttr(editEntry.phone||''):'')+'"></div>';
+    html += '<div class="field"><label>Adresse</label><input id="em-address" type="text" placeholder="optional" value="'+(editEntry?escapeAttr(editEntry.address||''):'')+'"></div>';
+    html += '<div class="field"><label>Notiz</label><input id="em-note" type="text" placeholder="z. B. Erreichbarkeit, Ansprechpartner …" value="'+(editEntry?escapeAttr(editEntry.note||''):'')+'"></div>';
+    html += '<button class="save-btn" id="em-save">'+(editEntry?'Änderung speichern':'Kontakt speichern')+'</button>';
+    if(editEntry) html += ' <button class="save-btn" id="em-cancel" style="background:transparent;border:1px solid var(--border-strong);color:var(--sand-dim);margin-top:8px">Abbrechen</button>';
+    html += '</div>';
+    html += '<div class="section-title">Eigene Kontakte</div>';
+    if(!items.length) html += '<div class="empty">Noch keine eigenen Kontakte hinterlegt.</div>';
+    else html += '<div class="card">'+items.map(function(x){
+      return '<div class="check-row" style="flex-direction:column;align-items:stretch;gap:6px">'
+        +'<div style="display:flex;align-items:center;gap:10px">'
+        +'<div class="check-text" style="flex:1"><b>'+escapeAttr(x.name)+'</b></div>'
+        +'<button class="del-btn" data-em-edit="'+x.id+'" style="position:static;color:var(--gold)">✎</button>'
+        +'<button class="del-btn" data-em-del="'+x.id+'" style="position:static">✕</button>'
+        +'</div>'
+        +'<div style="font-size:12.5px;color:var(--sand-dim);padding-left:2px">'
+        +(x.phone?'☎️ '+escapeAttr(x.phone)+'<br>':'')
+        +(x.address?'📍 '+escapeAttr(x.address)+'<br>':'')
+        +(x.note?escapeAttr(x.note):'')
+        +'</div></div>';
+    }).join('')+'</div>';
+    return html;
+  }
+
   function renderInsurance(){
     var items=state.settings.insuranceEntries||[];
     var editEntry = state.editingInsuranceId ? items.find(function(e){return e.id===state.editingInsuranceId;}) : null;
@@ -1592,6 +1657,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     { key:'wildlife', label:'Safari', icon:ICONS.wildlife },
     { key:'fuel', label:'Tankbuch', icon:ICONS.fuel },
     { key:'insurance', label:'Versicherungen', icon:ICONS.insurance },
+    { key:'emergency', label:'Notfallkontakte', icon:ICONS.emergency },
     { key:'settings', label:'Personen', icon:ICONS.settings }
   ];
 
@@ -1658,6 +1724,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     else if(state.tab==='fuel') html = renderFuel();
     else if(state.tab==='settings') html = renderSettings();
     else if(state.tab==='insurance') html = renderInsurance();
+    else if(state.tab==='emergency') html = renderEmergency();
     else html = renderCustomTab(state.tab);
     updateCloudStatusDot();
     var prevScroll = main.scrollTop;
@@ -1968,6 +2035,43 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
           var id=Number(b.getAttribute('data-ins-del'));
           state.settings.insuranceEntries=state.settings.insuranceEntries.filter(function(e){return e.id!==id;});
           if(state.editingInsuranceId===id) state.editingInsuranceId=null;
+          persistSettings();render();
+        }
+      });});
+    }
+    if(state.tab==='emergency'){
+      var emSave=document.getElementById('em-save');
+      if(emSave) emSave.addEventListener('click',function(){
+        var name=document.getElementById('em-name').value.trim();
+        if(!name){ showToast('Bitte einen Namen eingeben'); return; }
+        var vals={
+          name: name,
+          phone: document.getElementById('em-phone').value.trim(),
+          address: document.getElementById('em-address').value.trim(),
+          note: document.getElementById('em-note').value.trim()
+        };
+        if(!Array.isArray(state.settings.emergencyContacts)) state.settings.emergencyContacts=[];
+        if(state.editingEmergencyId){
+          var ex=state.settings.emergencyContacts.find(function(e){return e.id===state.editingEmergencyId;});
+          if(ex) Object.assign(ex,vals);
+          state.editingEmergencyId=null;
+          persistSettings();render();showToast('Kontakt aktualisiert');
+        } else {
+          state.settings.emergencyContacts.push(Object.assign({id:Date.now()},vals));
+          persistSettings();render();showToast('Kontakt gespeichert');
+        }
+      });
+      var emCancel=document.getElementById('em-cancel');
+      if(emCancel) emCancel.addEventListener('click',function(){ state.editingEmergencyId=null; render(); });
+      document.querySelectorAll('[data-em-edit]').forEach(function(b){b.addEventListener('click',function(){
+        state.editingEmergencyId=Number(b.getAttribute('data-em-edit'));
+        render();
+      });});
+      document.querySelectorAll('[data-em-del]').forEach(function(b){b.addEventListener('click',function(){
+        if(confirm('Diesen Kontakt löschen?')){
+          var id=Number(b.getAttribute('data-em-del'));
+          state.settings.emergencyContacts=state.settings.emergencyContacts.filter(function(e){return e.id!==id;});
+          if(state.editingEmergencyId===id) state.editingEmergencyId=null;
           persistSettings();render();
         }
       });});
