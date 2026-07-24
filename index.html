@@ -623,7 +623,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       <button id="cloud-dot" title="Speicherstatus" style="width:13px;height:13px;border-radius:50%;border:none;padding:0;flex-shrink:0;background:#888;box-shadow:0 0 6px rgba(0,0,0,.3);margin-top:4px"></button>
     </div>
     <div id="cloud-dot-detail" style="display:none;font-family:monospace;font-size:11.5px;margin-top:6px;padding:8px 10px;border-radius:8px;word-break:break-word;"></div>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AN</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AP</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -846,7 +846,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       customEntries: {},
       insuranceEntries: [],
       emergencyContacts: [],
-      embassyContacts: []
+      embassyContacts: [],
+      deletePin: '152404'
     }
   };
 
@@ -947,7 +948,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     if(!confirm('Wirklich alle App-Daten löschen? Erstelle vorher unbedingt ein Backup.')) return;
     var pw = prompt('Zur Bestätigung bitte das Lösch-Passwort eingeben:');
     if(pw === null) return;
-    if(pw !== '152404'){ showToast('Falsches Passwort – nichts wurde gelöscht'); return; }
+    var currentPin = state.settings.deletePin || '152404';
+    if(pw !== currentPin){ showToast('Falsches Passwort – nichts wurde gelöscht'); return; }
     state.expenses=[];
     state.settings.budgets={EUR:0,NAD:0,BWP:0,USD:0};
     state.settings.fuelEntries=[];
@@ -1662,6 +1664,14 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       html+='<div style="font-size:12px;color:var(--sand-dim);margin-bottom:12px">Löscht alle Ausgaben, Belege, Tankstopps, Sichtungen, Reiseetappen, Checklisten und Packliste. Erfordert PIN-Bestätigung.</div>';
       html+='<button type="button" id="reset-all" title="Alle App-Daten löschen" style="width:48px;height:48px;border-radius:50%;background:rgba(193,91,74,.18);border:1px solid var(--red);color:var(--red);font-size:20px;display:flex;align-items:center;justify-content:center">🗑️</button>';
       html+='</div>';
+      html+='<div class="card">';
+      html+='<div class="field"><label>Lösch-PIN ändern</label></div>';
+      html+='<div class="field"><label>Aktuelle PIN</label><input id="pin-current" type="text" inputmode="numeric" placeholder="Aktuelle PIN"></div>';
+      html+='<div class="field"><label>Neue PIN</label><input id="pin-new" type="text" inputmode="numeric" placeholder="Neue PIN"></div>';
+      html+='<div class="field"><label>Neue PIN wiederholen</label><input id="pin-new2" type="text" inputmode="numeric" placeholder="Neue PIN wiederholen"></div>';
+      html+='<button class="save-btn" id="pin-change">PIN ändern</button>';
+      html+='<div style="text-align:center;margin-top:10px"><span id="pin-forgot" style="font-size:12px;color:var(--sand-dim);text-decoration:underline;cursor:pointer">PIN vergessen? Auf Standard zurücksetzen</span></div>';
+      html+='</div>';
     }
     html+='<div class="section-title" style="margin-top:22px">Navigationsleiste bearbeiten</div>';
     html+='<div class="card" id="nav-edit-toggle" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">';
@@ -2139,6 +2149,30 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     }
     if(state.tab==='settings'){
       var reset=document.getElementById('reset-all');if(reset)reset.addEventListener('click',resetAllData);
+      var pinChange=document.getElementById('pin-change');
+      if(pinChange) pinChange.addEventListener('click',function(){
+        var cur=document.getElementById('pin-current').value.trim();
+        var neu=document.getElementById('pin-new').value.trim();
+        var neu2=document.getElementById('pin-new2').value.trim();
+        var currentPin = state.settings.deletePin || '152404';
+        if(cur !== currentPin){ showToast('Aktuelle PIN ist falsch'); return; }
+        if(!neu || neu.length<4){ showToast('Neue PIN muss mind. 4 Zeichen haben'); return; }
+        if(neu !== neu2){ showToast('Neue PINs stimmen nicht überein'); return; }
+        state.settings.deletePin = neu;
+        persistSettings();
+        document.getElementById('pin-current').value='';
+        document.getElementById('pin-new').value='';
+        document.getElementById('pin-new2').value='';
+        showToast('PIN geändert');
+      });
+      var pinForgot=document.getElementById('pin-forgot');
+      if(pinForgot) pinForgot.addEventListener('click',function(){
+        if(confirm('Lösch-PIN wirklich auf den Standard 152404 zurücksetzen?')){
+          state.settings.deletePin = '152404';
+          persistSettings();
+          showToast('PIN wurde auf 152404 zurückgesetzt');
+        }
+      });
       var add=document.getElementById('add-participant');
       if(add) add.addEventListener('click',function(){PAYERS.push('Neue Person');state.settings.payers=PAYERS.slice();render();});
       document.querySelectorAll('[data-remove-participant]').forEach(function(btn){
