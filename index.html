@@ -623,7 +623,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       <button id="cloud-dot" title="Speicherstatus" style="width:13px;height:13px;border-radius:50%;border:none;padding:0;flex-shrink:0;background:#888;box-shadow:0 0 6px rgba(0,0,0,.3);margin-top:4px"></button>
     </div>
     <div id="cloud-dot-detail" style="display:none;font-family:monospace;font-size:11.5px;margin-top:6px;padding:8px 10px;border-radius:8px;word-break:break-word;"></div>
-    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AP</div>
+    <div style="font-family:monospace;font-size:11px;opacity:.6;margin-top:2px;">Entworfen 2026-07-12-AR</div>
   </header>
   <main id="main"></main>
   <nav id="nav"></nav>
@@ -700,6 +700,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
         localStorage.setItem('reisekasse_expenses', JSON.stringify(state.expenses));
         localStorage.setItem('reisekasse_settings', JSON.stringify(state.settings));
         state.storageMode = 'cloud';
+        checkAccessGate();
         render();
       } else if(!isPoll){
         await saveCloudData();
@@ -807,6 +808,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     tab: 'dashboard',
     expenses: [],
     loaded: false,
+    locked: false,
     editingId: null,
     form: null,
     histFilterCat: 'all',
@@ -847,7 +849,8 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       insuranceEntries: [],
       emergencyContacts: [],
       embassyContacts: [],
-      deletePin: '152404'
+      deletePin: '152404',
+      accessCode: ''
     }
   };
 
@@ -908,12 +911,22 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       if(!Array.isArray(state.settings.checklistEntries)) state.settings.checklistEntries=[];
       if(!Array.isArray(state.settings.insuranceEntries)) state.settings.insuranceEntries=[];
       if(!Array.isArray(state.settings.emergencyContacts)) state.settings.emergencyContacts=[];
+      if(typeof state.settings.accessCode !== 'string') state.settings.accessCode='';
       PAYERS = state.settings.payers.slice();
       ensureSharedPackingList();
     }catch(e){}
+    checkAccessGate();
     state.loaded = true;
     render();
-    loadCloudData().then(startCloudSync);
+    loadCloudData().then(function(){ checkAccessGate(); render(); startCloudSync(); });
+  }
+
+  function checkAccessGate(){
+    var code = (state.settings.accessCode||'').trim();
+    if(!code){ state.locked = false; return; }
+    var verified = '';
+    try{ verified = localStorage.getItem('reisekasse_verified_code') || ''; }catch(e){}
+    state.locked = (verified !== code);
   }
 
   async function persist(){
@@ -1647,7 +1660,7 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       html+='<div class="card">';
       html+='<div id="participant-list">';
       PAYERS.forEach(function(p,i){
-        html+='<div class="participant-row"><input type="text" data-participant="'+i+'" value="'+escapeAttr(p)+'"><button type="button" data-remove-participant="'+i+'" '+(PAYERS.length<=2?'disabled style="opacity:.35"':'')+'>✕</button></div>';
+        html+='<div class="participant-row"><input type="text" data-participant="'+i+'" value="'+escapeAttr(p)+'"><button type="button" data-remove-participant="'+i+'" '+(p==='Dirk & Antje'?'disabled style="opacity:.35"':'')+'>✕</button></div>';
       });
       html+='</div><button class="tool-btn" id="add-participant" style="width:100%;margin-top:4px">＋ Teilnehmer hinzufügen</button>';
       html+='<button class="save-btn" id="save-participants">Teilnehmer speichern</button>';
@@ -1673,6 +1686,15 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
       html+='<div style="text-align:center;margin-top:10px"><span id="pin-forgot" style="font-size:12px;color:var(--sand-dim);text-decoration:underline;cursor:pointer">PIN vergessen? Auf Standard zurücksetzen</span></div>';
       html+='</div>';
     }
+    html+='<div class="section-title" style="margin-top:22px">Zugangssperre</div><div class="card">';
+    var hasCode = !!(state.settings.accessCode||'').trim();
+    html+='<div style="font-size:12px;color:var(--sand-dim);margin-bottom:12px">'+(hasCode
+      ? 'Aktuell aktiv. Nur wer den aktuellen Code kennt, kann die App öffnen. Ändere den Code, um jemanden auszusperren – die Adresse bleibt gleich, du musst keinen neuen Link verschicken.'
+      : 'Noch nicht aktiv. Solange kein Code gesetzt ist, kann jeder mit dem Link die App öffnen.')+'</div>';
+    html+='<div class="field"><label>Zugangscode</label><input id="access-code-field" type="text" placeholder="z. B. Namibia2026" value="'+escapeAttr(state.settings.accessCode||'')+'"></div>';
+    html+='<button class="save-btn" id="access-code-save">Code speichern</button>';
+    if(hasCode) html+=' <button class="save-btn" id="access-code-clear" style="background:transparent;border:1px solid var(--border-strong);color:var(--sand-dim);margin-top:8px">Sperre deaktivieren</button>';
+    html+='</div>';
     html+='<div class="section-title" style="margin-top:22px">Navigationsleiste bearbeiten</div>';
     html+='<div class="card" id="nav-edit-toggle" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">';
     html+='<span>Tabs anzeigen/ausblenden & Kategorien verwalten</span><span id="nav-edit-arrow" style="transition:transform .2s ease;'+(state.navEditOpen?'transform:rotate(180deg)':'')+'">▾</span></div>';
@@ -1744,6 +1766,36 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
   }
 
   // ---------- Main render ----------
+  function renderLockScreen(){
+    return '<div class="card" style="margin-top:40px;text-align:center;padding:32px 20px">'
+      +'<div style="font-size:44px;margin-bottom:12px">🔒</div>'
+      +'<div style="font-family:\'Fraunces\',serif;font-size:20px;margin-bottom:10px">Zugriff gesperrt</div>'
+      +'<div style="font-size:13px;color:var(--sand-dim);line-height:1.5;margin-bottom:20px">Für diese Reisekasse wird ein aktueller Zugangscode benötigt.<br>Bitte beim Reise-Organisator nachfragen.</div>'
+      +'<input id="access-code-input" type="text" placeholder="Zugangscode eingeben" style="text-align:center;margin-bottom:12px">'
+      +'<button class="save-btn" id="access-code-submit">Freischalten</button>'
+      +'<div id="access-code-error" style="color:var(--red);font-size:12.5px;margin-top:10px"></div>'
+      +'</div>';
+  }
+
+  function bindLockScreenEvents(){
+    var btn = document.getElementById('access-code-submit');
+    var input = document.getElementById('access-code-input');
+    var err = document.getElementById('access-code-error');
+    function tryUnlock(){
+      var val = (input.value||'').trim();
+      var code = (state.settings.accessCode||'').trim();
+      if(val && val === code){
+        try{ localStorage.setItem('reisekasse_verified_code', val); }catch(e){}
+        state.locked = false;
+        render();
+      } else {
+        err.textContent = 'Code ist falsch. Bitte erneut versuchen.';
+      }
+    }
+    if(btn) btn.addEventListener('click', tryUnlock);
+    if(input) input.addEventListener('keydown', function(ev){ if(ev.key==='Enter') tryUnlock(); });
+  }
+
   function render(){
     var titleEl = document.getElementById('app-title');
     if(titleEl){
@@ -1761,6 +1813,12 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
     if(!state.loaded){
       main.innerHTML = '<div class="empty">Lade Reisekasse…</div>';
       nav.innerHTML = '';
+      return;
+    }
+    if(state.locked){
+      main.innerHTML = renderLockScreen();
+      nav.innerHTML = '';
+      bindLockScreenEvents();
       return;
     }
     var html = '';
@@ -2173,16 +2231,32 @@ input,select,.tool-btn,.receipt-btn,.wild-btn,.count-box,.receipt-box{
           showToast('PIN wurde auf 152404 zurückgesetzt');
         }
       });
+      var accessSave=document.getElementById('access-code-save');
+      if(accessSave) accessSave.addEventListener('click',function(){
+        var val=document.getElementById('access-code-field').value.trim();
+        state.settings.accessCode=val;
+        try{ localStorage.setItem('reisekasse_verified_code', val); }catch(e){}
+        persistSettings();render();
+        showToast(val ? 'Zugangscode gespeichert – jetzt gültig' : 'Zugangscode gespeichert');
+      });
+      var accessClear=document.getElementById('access-code-clear');
+      if(accessClear) accessClear.addEventListener('click',function(){
+        if(!confirm('Zugangssperre wirklich deaktivieren? Dann kann wieder jeder mit dem Link zugreifen.'))return;
+        state.settings.accessCode='';
+        try{ localStorage.removeItem('reisekasse_verified_code'); }catch(e){}
+        persistSettings();render();
+        showToast('Zugangssperre deaktiviert');
+      });
       var add=document.getElementById('add-participant');
       if(add) add.addEventListener('click',function(){PAYERS.push('Neue Person');state.settings.payers=PAYERS.slice();render();});
       document.querySelectorAll('[data-remove-participant]').forEach(function(btn){
-        btn.addEventListener('click',function(){if(PAYERS.length<=2)return;PAYERS.splice(Number(btn.getAttribute('data-remove-participant')),1);state.settings.payers=PAYERS.slice();render();});
+        btn.addEventListener('click',function(){var i=Number(btn.getAttribute('data-remove-participant'));if(PAYERS[i]==='Dirk & Antje')return;PAYERS.splice(i,1);state.settings.payers=PAYERS.slice();render();});
       });
       var saveP=document.getElementById('save-participants');
       if(saveP) saveP.addEventListener('click',function(){
         var old=PAYERS.slice(), names=[];
         document.querySelectorAll('[data-participant]').forEach(function(el){var n=el.value.trim();if(n)names.push(n);});
-        if(names.length<2){alert('Bitte mindestens zwei Teilnehmer eintragen.');return;}
+        if(names.length<1){alert('Bitte mindestens einen Teilnehmer eintragen.');return;}
         if(new Set(names).size!==names.length){alert('Jeder Teilnehmer braucht einen eindeutigen Namen.');return;}
         old.forEach(function(o,i){if(names[i]&&o!==names[i]){
           state.expenses.forEach(function(e){if(e.payer===o)e.payer=names[i];});
